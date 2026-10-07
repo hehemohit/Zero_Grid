@@ -7,6 +7,8 @@ import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
+import retrofit2.http.Query
+
 
 // ── Request Bodies ───────────────────────────────────────────────────────────
 
@@ -144,7 +146,11 @@ interface SosApiService {
     ): Response<DetourResponse>
 
     @GET("${ApiConstants.SOS}/active")
-    suspend fun getActiveSos(): Response<SosActiveResponse>
+    suspend fun getActiveSos(
+        @Query("lat")      lat: Double? = null,
+        @Query("lng")      lng: Double? = null,
+        @Query("radiusKm") radiusKm: Double? = null
+    ): Response<SosActiveResponse>
 
     /** Returns SOS events that THIS user has personally acknowledged */
     @GET("${ApiConstants.SOS}/acknowledged")

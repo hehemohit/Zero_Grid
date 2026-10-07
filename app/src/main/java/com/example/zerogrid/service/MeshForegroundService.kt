@@ -13,6 +13,9 @@ import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.zerogrid.MainActivity
+import com.example.zerogrid.emergency.OverlayAlertManager
+import com.example.zerogrid.location.HazardAlert
+import com.example.zerogrid.location.HazardProximityMonitor
 import com.example.zerogrid.mesh.engine.MeshEngine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -230,6 +233,15 @@ class MeshForegroundService : Service() {
                     Log.e(TAG, "Error initializing mesh engine in background", e)
                 }
             }
+
+            // ── Hazard Proximity Monitor ──────────────────────────────────────
+            // Starts the 60s cache-based proximity tick and listens for alerts.
+            HazardProximityMonitor.startMonitoring(applicationContext, serviceScope)
+            serviceScope.launch {
+                HazardProximityMonitor.alertFlow.collect { alert ->
+                    onHazardAlert(alert)
+                }
+            }
         } catch (e: Throwable) {
             Log.e(TAG, "Failed to enter foreground mode", e)
         }
@@ -267,6 +279,23 @@ class MeshForegroundService : Service() {
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
+
+    /** Fires when [HazardProximityMonitor] detects the user within 200 m of a hazard. */
+    private fun onHazardAlert(alert: HazardAlert) {
+        Log.w(TAG, "Hazard alert received: ${alert.eventId} — ${alert.waterDepthCm} cm at ${alert.distanceMeters.toInt()} m")
+
+        if (OverlayAlertManager.canDrawOverlays(applicationContext)) {
+            // Primary: full-screen draw-over-app overlay with alarm sound
+            OverlayAlertManager.show(applicationContext, alert)
+        } else {
+            // Fallback: heads-up system notification
+            showHazardNotification(
+                context = applicationContext,
+                title   = "⚠ Flood Zone Ahead — ${alert.distanceMeters.toInt()} m",
+                payload = "Water depth: ${alert.waterDepthCm} cm. Tap to assess your risk and get rerouted."
+            )
+        }
+    }
 
     private fun createNotification(statusText: String): Notification {
         val pendingIntent = PendingIntent.getActivity(

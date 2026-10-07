@@ -4,8 +4,10 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -238,6 +240,7 @@ class MainActivity : ComponentActivity() {
         Log.d("MainActivity", "onCreate started")
 
         checkAndRequestPermissions()
+        requestOverlayPermissionIfNeeded()
 
         val themePreferenceManager = ThemePreferenceManager(this)
         val initialThemeMode = themePreferenceManager.getThemeModeSync()
@@ -326,4 +329,20 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-}
+
+    /**
+     * Redirects the user to Settings to grant SYSTEM_ALERT_WINDOW (Draw Over Other Apps)
+     * if it hasn't been granted yet.
+     * Required for the flood hazard overlay to appear on top of any running app.
+     */
+    private fun requestOverlayPermissionIfNeeded() {
+        if (!Settings.canDrawOverlays(this)) {
+            Log.i("MainActivity", "Requesting SYSTEM_ALERT_WINDOW for hazard overlay alerts.")
+            val intent = Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:$packageName")
+            )
+            startActivity(intent)
+        }
+    }
+}
