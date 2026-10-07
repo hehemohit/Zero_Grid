@@ -7,6 +7,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -33,6 +34,7 @@ fun TacticalRadarCanvas(
     incidents: List<AdminSosEventDto>,
     selectedIncident: AdminSosEventDto?,
     onIncidentSelected: (AdminSosEventDto) -> Unit,
+    dataMuleQueueCount: Int = 0,
     modifier: Modifier = Modifier
 ) {
     val colors = ZeroGridTheme.colors
@@ -127,16 +129,42 @@ fun TacticalRadarCanvas(
                 val pinY = center.y + (maxRadius * distFraction * sin(rad)).toFloat()
                 val pinPos = Offset(pinX, pinY)
 
-                val pinColor = AdminFormatters.getCategoryColor(inc.category)
+                val isHydroHazard = (inc.waterDepthCm ?: 0) > 0 || inc.category in setOf("WATERLOGGING", "SUBMERGED_UNDERPASS", "DRAINAGE_OVERFLOW")
+                val pinColor = if (isHydroHazard) {
+                    val depth = inc.waterDepthCm ?: 0
+                    when {
+                        depth < 30  -> Color(0xFFFACC15) // Yellow: Shallow waterlogging
+                        depth < 60  -> Color(0xFFF97316) // Orange: Moderate flood
+                        else        -> Color(0xFFEF4444) // Red: Critical submerged
+                    }
+                } else {
+                    AdminFormatters.getCategoryColor(inc.category)
+                }
                 val isSelected = inc.eventId == selectedIncident?.eventId
 
                 // Outer aura for selected or active
                 if (isSelected) {
                     drawCircle(
                         color = if (colors.isDark) Color.White else Color.Black,
-                        radius = 12.dp.toPx(),
+                        radius = 14.dp.toPx(),
                         center = pinPos,
                         style = Stroke(2.dp.toPx())
+                    )
+                }
+
+                // Concentric ripple rings for hydro-hazard blips
+                if (isHydroHazard) {
+                    drawCircle(
+                        color = pinColor.copy(alpha = 0.20f),
+                        radius = 16.dp.toPx(),
+                        center = pinPos,
+                        style = Stroke(1.dp.toPx())
+                    )
+                    drawCircle(
+                        color = pinColor.copy(alpha = 0.35f),
+                        radius = 11.dp.toPx(),
+                        center = pinPos,
+                        style = Stroke(1.5.dp.toPx())
                     )
                 }
 
@@ -170,6 +198,25 @@ fun TacticalRadarCanvas(
                 fontSize = 9.sp,
                 fontFamily = FontFamily.Monospace
             )
+        }
+
+        // Data Mule queue status badge (top-right)
+        if (dataMuleQueueCount > 0) {
+            Surface(
+                modifier = Modifier.align(Alignment.TopEnd),
+                shape = RoundedCornerShape(6.dp),
+                color = Color(0xFFFACC15).copy(alpha = 0.15f),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFACC15).copy(alpha = 0.5f))
+            ) {
+                Text(
+                    text = "DATA MULE QUEUE: $dataMuleQueueCount PKTS",
+                    color = Color(0xFFFACC15),
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace,
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                )
+            }
         }
 
         Text(

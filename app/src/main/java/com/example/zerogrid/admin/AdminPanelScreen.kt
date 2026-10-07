@@ -33,6 +33,8 @@ import com.example.zerogrid.admin.ui.history.SosHistoryTab
 import com.example.zerogrid.admin.ui.users.UserManagementTab
 import com.example.zerogrid.ui.theme.*
 import com.zerogrid.mesh.app.ui.UserSessionManager
+import com.example.zerogrid.mesh.engine.MeshEngine
+import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -66,6 +68,10 @@ fun AdminPanelScreen(
     var userSearchQuery by remember { mutableStateOf("") }
     var isMapVisible by remember { mutableStateOf(true) }
     var isGoogleMapSelected by remember { mutableStateOf(true) }
+
+    val meshEngine = remember { MeshEngine.getInstance(context) }
+    val dataMuleQueueCount by meshEngine.dataMuleQueueSize.collectAsState()
+    var detourPolyline by remember { mutableStateOf<List<LatLng>?>(null) }
 
     var inspectedIncident by remember { mutableStateOf<AdminSosEventDto?>(null) }
     var isFeedLoading by remember { mutableStateOf(false) }
@@ -340,13 +346,15 @@ fun AdminPanelScreen(
                                                         inspectedIncident = it
                                                     }
                                                 }
-                                            }
+                                            },
+                                            detourPolyline = detourPolyline
                                         )
                                     } else {
                                         TacticalRadarCanvas(
                                             incidents = filteredActiveFeed,
                                             selectedIncident = inspectedIncident,
-                                            onIncidentSelected = { inspectedIncident = it }
+                                            onIncidentSelected = { inspectedIncident = it },
+                                            dataMuleQueueCount = dataMuleQueueCount
                                         )
                                     }
                                 }
@@ -550,13 +558,15 @@ fun AdminPanelScreen(
                                                                         inspectedIncident = it
                                                                     }
                                                                 }
-                                                            }
+                                                            },
+                                                            detourPolyline = detourPolyline
                                                         )
                                                     } else {
                                                         TacticalRadarCanvas(
                                                             incidents = filteredActiveFeed,
                                                             selectedIncident = inspectedIncident,
-                                                            onIncidentSelected = { inspectedIncident = it }
+                                                            onIncidentSelected = { inspectedIncident = it },
+                                                            dataMuleQueueCount = dataMuleQueueCount
                                                         )
                                                     }
                                                 }

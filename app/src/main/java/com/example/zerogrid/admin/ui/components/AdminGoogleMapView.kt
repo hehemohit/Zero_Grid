@@ -42,6 +42,7 @@ fun AdminGoogleMapView(
     selectedIncident: AdminSosEventDto?,
     onIncidentSelected: (AdminSosEventDto?) -> Unit,
     onInspectDetails: (AdminSosEventDto) -> Unit,
+    detourPolyline: List<LatLng>? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -172,6 +173,42 @@ fun AdminGoogleMapView(
                         )
                     }
                 }
+            }
+
+            // Flood depth overlays (scaled circles indicating waterlogged hazard zones)
+            incidents.filter { (it.waterDepthCm ?: 0) > 0 }.forEach { inc ->
+                val depth = inc.waterDepthCm ?: 0
+                val lat = inc.location?.latitude
+                val lng = inc.location?.longitude
+                if (lat != null && lng != null && (lat != 0.0 || lng != 0.0)) {
+                    val depthColor = when {
+                        depth < 30  -> Color(0xFFFACC15).copy(alpha = 0.28f) // Yellow: Minor waterlogging
+                        depth < 60  -> Color(0xFFF97316).copy(alpha = 0.35f) // Orange: High clearance only
+                        else        -> Color(0xFFEF4444).copy(alpha = 0.42f) // Red: Impassable submerged zone
+                    }
+                    val strokeColor = when {
+                        depth < 30  -> Color(0xFFFACC15).copy(alpha = 0.85f)
+                        depth < 60  -> Color(0xFFF97316).copy(alpha = 0.85f)
+                        else        -> Color(0xFFEF4444).copy(alpha = 0.85f)
+                    }
+                    val radiusMeters = (depth * 5.0).coerceIn(40.0, 450.0)
+                    Circle(
+                        center = LatLng(lat, lng),
+                        radius = radiusMeters,
+                        fillColor = depthColor,
+                        strokeColor = strokeColor,
+                        strokeWidth = 2.5f
+                    )
+                }
+            }
+
+            // Safe Detour Polyline (AI Agent Rerouting overlay)
+            if (!detourPolyline.isNullOrEmpty()) {
+                Polyline(
+                    points = detourPolyline,
+                    color = Color(0xFF00E5FF),
+                    width = 6f
+                )
             }
         }
 
