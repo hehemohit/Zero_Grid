@@ -1,0 +1,4 @@
+## Local configuration template - do not add real secrets here.
+# Copy this file to 'local.properties' and set your own keys.
+sdk.dir=/path/to/Android/Sdk
+MAPS_API_KEY=YOUR_GOOGLE_MAPS_API_KEY_HERE

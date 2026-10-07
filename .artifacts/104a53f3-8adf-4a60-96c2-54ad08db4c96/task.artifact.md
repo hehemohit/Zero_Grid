@@ -1,0 +1,5 @@
+- [x] Phase 1: Break the Loopback
+    - [x] Setup testing infrastructure and refining routing engine
+    - [x] Implement BLE Outbound (GATT Client, MTU, Framing, Reassembly)
+    - [x] Implement Wi-Fi Direct Outbound (BroadcastReceiver, ConnectionInfo, TCP Client/Server with framing)
+    - [x] Verification and Documentation update

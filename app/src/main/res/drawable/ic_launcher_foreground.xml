@@ -1,0 +1,73 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 5 Connector Spoke Lines from Central Node to Satellite Nodes -->
+    <!-- Top Spoke -->
+    <path
+        android:pathData="M54,54 L54,29"
+        android:strokeWidth="3.5"
+        android:strokeColor="#00E5FF"
+        android:strokeLineCap="round" />
+
+    <!-- Top-Right Spoke -->
+    <path
+        android:pathData="M54,54 L77.8,46.3"
+        android:strokeWidth="3.5"
+        android:strokeColor="#00E5FF"
+        android:strokeLineCap="round" />
+
+    <!-- Bottom-Right Spoke -->
+    <path
+        android:pathData="M54,54 L68.7,74.2"
+        android:strokeWidth="3.5"
+        android:strokeColor="#00E5FF"
+        android:strokeLineCap="round" />
+
+    <!-- Bottom-Left Spoke -->
+    <path
+        android:pathData="M54,54 L39.3,74.2"
+        android:strokeWidth="3.5"
+        android:strokeColor="#00E5FF"
+        android:strokeLineCap="round" />
+
+    <!-- Top-Left Spoke -->
+    <path
+        android:pathData="M54,54 L30.2,46.3"
+        android:strokeWidth="3.5"
+        android:strokeColor="#00E5FF"
+        android:strokeLineCap="round" />
+
+    <!-- Central Node (Ring) -->
+    <path
+        android:pathData="M54,46 A8,8 0 1,0 54,62 A8,8 0 1,0 54,46 Z M54,50 A4,4 0 1,1 54,58 A4,4 0 1,1 54,50 Z"
+        android:fillColor="#00E5FF" />
+
+    <!-- Node 1: Top (54, 29) Ring -->
+    <path
+        android:pathData="M54,24 A5,5 0 1,0 54,34 A5,5 0 1,0 54,24 Z M54,26.5 A2.5,2.5 0 1,1 54,31.5 A2.5,2.5 0 1,1 54,26.5 Z"
+        android:fillColor="#00E5FF" />
+
+    <!-- Node 2: Top-Right (77.8, 46.3) Ring -->
+    <path
+        android:pathData="M77.8,41.3 A5,5 0 1,0 77.8,51.3 A5,5 0 1,0 77.8,41.3 Z M77.8,43.8 A2.5,2.5 0 1,1 77.8,48.8 A2.5,2.5 0 1,1 77.8,43.8 Z"
+        android:fillColor="#00E5FF" />
+
+    <!-- Node 3: Bottom-Right (68.7, 74.2) Ring -->
+    <path
+        android:pathData="M68.7,69.2 A5,5 0 1,0 68.7,79.2 A5,5 0 1,0 68.7,69.2 Z M68.7,71.7 A2.5,2.5 0 1,1 68.7,76.7 A2.5,2.5 0 1,1 68.7,71.7 Z"
+        android:fillColor="#00E5FF" />
+
+    <!-- Node 4: Bottom-Left (39.3, 74.2) Ring -->
+    <path
+        android:pathData="M39.3,69.2 A5,5 0 1,0 39.3,79.2 A5,5 0 1,0 39.3,69.2 Z M39.3,71.7 A2.5,2.5 0 1,1 39.3,76.7 A2.5,2.5 0 1,1 39.3,71.7 Z"
+        android:fillColor="#00E5FF" />
+
+    <!-- Node 5: Top-Left (30.2, 46.3) Ring -->
+    <path
+        android:pathData="M30.2,41.3 A5,5 0 1,0 30.2,51.3 A5,5 0 1,0 30.2,41.3 Z M30.2,43.8 A2.5,2.5 0 1,1 30.2,48.8 A2.5,2.5 0 1,1 30.2,43.8 Z"
+        android:fillColor="#00E5FF" />
+
+</vector>

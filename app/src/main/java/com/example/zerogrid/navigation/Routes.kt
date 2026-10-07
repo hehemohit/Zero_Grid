@@ -1,0 +1,26 @@
+package com.example.zerogrid.navigation
+
+enum class Screen {
+    HOME,
+    MESSAGES,
+    MESH,
+    SETTINGS,
+    SOS_CENTER,
+    SEND_SOS,
+    PEER_DETAILS,
+    CHANNELS,
+    CHAT_DETAIL,
+    PEER_DIRECT_CHAT,
+    SPLASH,
+    ONBOARDING,
+    PERMISSIONS,
+    CREATE_IDENTITY,
+    NETWORK_STATUS,
+    SECURITY_PRIVACY,
+    DEBUG_CONSOLE,
+    EMERGENCY_CONTACTS,
+    FAMILY_LINKS,
+    PROFILE,
+    TRACK_SOS
+}
+
