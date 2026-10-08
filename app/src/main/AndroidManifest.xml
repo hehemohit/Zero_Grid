@@ -24,6 +24,7 @@
     <!-- Foreground Service Permissions -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" tools:targetApi="34" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" tools:targetApi="34" />
 
     <!-- Hazard Proximity Alert Overlay: draw over any app like an incoming-call screen -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
@@ -60,7 +61,7 @@
             android:name=".service.MeshForegroundService"
             android:enabled="true"
             android:exported="false"
-            android:foregroundServiceType="connectedDevice" />
+            android:foregroundServiceType="connectedDevice|location" />
 
         <service
             android:name=".service.ZeroGridFirebaseMessagingService"

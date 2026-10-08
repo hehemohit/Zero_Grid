@@ -6,7 +6,9 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
+import android.os.Build
 import android.os.Bundle
+import android.os.CancellationSignal
 import android.os.Looper
 import android.util.Log
 import androidx.core.content.ContextCompat
@@ -28,7 +30,7 @@ import kotlin.coroutines.resume
 object LocationHelper {
 
     private const val TAG = "LocationHelper"
-    private const val TIMEOUT_MS = 5_000L  // Max 5 s wait before giving up
+    private const val TIMEOUT_MS = 10_000L  // Max 10 s wait before giving up
 
     data class LocationResult(
         val lat: Double,
@@ -97,7 +99,14 @@ object LocationHelper {
     }
 
     private fun getBestCachedLocation(lm: LocationManager): Location? {
-        val providers = listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER)
+        val providers = mutableListOf(
+            LocationManager.GPS_PROVIDER,
+            LocationManager.NETWORK_PROVIDER,
+            LocationManager.PASSIVE_PROVIDER
+        )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            providers.add(0, LocationManager.FUSED_PROVIDER)
+        }
         return providers
             .mapNotNull { provider ->
                 runCatching { lm.getLastKnownLocation(provider) }.getOrNull()
@@ -113,6 +122,36 @@ object LocationHelper {
         context: Context,
         lm: LocationManager
     ): Location? = suspendCancellableCoroutine { cont ->
+        // Modern Android 11+ (API 30+) one-shot location request
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val provider = when {
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && lm.isProviderEnabled(LocationManager.FUSED_PROVIDER) ->
+                    LocationManager.FUSED_PROVIDER
+                lm.isProviderEnabled(LocationManager.GPS_PROVIDER) ->
+                    LocationManager.GPS_PROVIDER
+                lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER) ->
+                    LocationManager.NETWORK_PROVIDER
+                else -> null
+            }
+
+            if (provider != null) {
+                val cancellationSignal = CancellationSignal()
+                cont.invokeOnCancellation { cancellationSignal.cancel() }
+                try {
+                    lm.getCurrentLocation(
+                        provider,
+                        cancellationSignal,
+                        ContextCompat.getMainExecutor(context)
+                    ) { location ->
+                        if (cont.isActive) cont.resume(location)
+                    }
+                    return@suspendCancellableCoroutine
+                } catch (e: Exception) {
+                    Log.w(TAG, "lm.getCurrentLocation failed, falling back to requestLocationUpdates: ${e.message}")
+                }
+            }
+        }
+
         val listener = object : LocationListener {
             override fun onLocationChanged(location: Location) {
                 lm.removeUpdates(this)
