@@ -1,271 +1,465 @@
-# ZeroGrid — Urban Flood & Heatwave Resilience Mesh
+# ZeroGrid — Technical System Architecture & Specification
 
-### 🏆 Built for Bharat Builds Hackathon — Track 2: Heat and Water
-> **An offline-first, agent-driven disaster resilience platform that decentralizes hyper-local hazard telemetry through peer-to-peer Android mesh networks, orchestrates autonomous risk mitigation via the AWS Strands Agents SDK, and delivers life-saving rerouting to citizens and real-time crisis intelligence to municipal authorities.**
-
-[![Track](https://img.shields.io/badge/Bharat%20Builds-Track%202%3A%20Heat%20%26%20Water-00C853?style=for-the-badge)](https://bharatbuilds.dev)
-[![AWS](https://img.shields.io/badge/AWS-Amplify%20%7C%20ECS%20%7C%20Strands%20Agents-FF9900?style=for-the-badge&logo=amazon-aws&logoColor=white)](https://aws.amazon.com/)
-[![Android](https://img.shields.io/badge/Android-Kotlin%20%7C%20Jetpack%20Compose%20%7C%20BLE%20Mesh-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com/)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=for-the-badge)](LICENSE)
+### 🏆 Bharat Builds Hackathon — Track 2: Heat & Water
+> **High-availability, decentralized disaster telemetry & autonomous rerouting platform. Combines an offline-first Android BLE/Wi-Fi Direct mesh network with an AWS cloud brain powered by the AWS Strands Agents SDK (`@strands-agents/sdk`), OSRM dynamic routing, and AWS Amplify.**
 
 ---
 
-## 📑 Table of Contents
+## 1. System Design & End-to-End Data Flow
 
-1. [The Crisis: Urban Climate Vulnerability in India](#1-the-crisis-urban-climate-vulnerability-in-india)
-2. [The Vision: ZeroGrid](#2-the-vision-zerogrid)
-3. [Core Innovation Pillars](#3-core-innovation-pillars)
-   - 3.1 [The Edge Layer: Offline-First P2P Mesh & Data Mules](#31-the-edge-layer-offline-first-p2p-mesh--data-mules)
-   - 3.2 [The Cloud Brain: AWS Strands Agents SDK Integration](#32-the-cloud-brain-aws-strands-agents-sdk-integration)
-   - 3.3 [The Citizen Experience: Proactive Driver Copilot](#33-the-citizen-experience-proactive-driver-copilot)
-   - 3.4 [The Municipal Experience: AWS Amplify Command Center](#34-the-municipal-experience-aws-amplify-command-center)
-4. [End-to-End System Architecture](#4-end-to-end-system-architecture)
-5. [AWS Cloud & Agentic Architecture](#5-aws-cloud--agentic-architecture)
-   - 5.1 [AWS Strands Agents SDK Pipeline](#51-aws-strands-agents-sdk-pipeline)
-   - 5.2 [AWS Cloud Infrastructure Blueprint](#52-aws-cloud-infrastructure-blueprint)
-6. [Android Edge Engineering (`gridzero`)](#6-android-edge-engineering-gridzero)
-   - 6.1 [BLE & Wi-Fi Direct Mesh Engine](#61-ble--wi-fi-direct-mesh-engine)
-   - 6.2 [Proactive System Alert Window (`SYSTEM_ALERT_WINDOW`)](#62-proactive-system-alert-window-system_alert_window)
-   - 6.3 [OSRM Autonomous Route Engine & Dual-Category Analysis](#63-osrm-autonomous-route-engine--dual-category-analysis)
-   - 6.4 [Offline Hazard Cache Manager & Monitored Categories](#64-offline-hazard-cache-manager--monitored-categories)
-7. [Municipal Command Center (`gridZeroExpress/frontend`)](#7-municipal-command-center-gridzeroexpressfrontend)
-8. [Why ZeroGrid Wins Hackathon Judging](#8-why-zerogrid-wins-hackathon-judging)
-9. [Project Directory Structure](#9-project-directory-structure)
-10. [Setup & Deployment Guide](#10-setup--deployment-guide)
-11. [Troubleshooting & Hardware Optimization Notes](#11-troubleshooting--hardware-optimization-notes)
-
----
-
-## 1. The Crisis: Urban Climate Vulnerability in India
-
-Every monsoon, Indian metropolises (Mumbai, Chennai, Bengaluru, Delhi, Kolkata) experience catastrophic flash floods, localized cloudbursts, and severe waterlogging. Simultaneously, pre-monsoon heatwaves regularly push urban heat island temperatures past 48°C.
-
-During these extreme climate events:
-1. **Cellular Infrastructure Collapses**: Cell towers flood, lose grid power, or become saturated by surge traffic, creating total communication blackouts.
-2. **Traditional GPS Becomes Blind**: Mainstream navigation applications (Google Maps, Apple Maps) require persistent cloud connectivity and lack hyper-local ground telemetry—such as water depth inside subways or fallen electrical lines—leading unsuspecting drivers straight into submerged underpasses (e.g., Milan Subway, Malad Subway) and fatal electrocution hazards.
-3. **Municipal Responders Operate in the Dark**: City disaster control rooms rely on delayed phone calls, leaving them unable to identify blocked arterial roads or pinpoint where emergency de-watering pump trucks are urgently needed.
-
----
-
-## 2. The Vision: ZeroGrid
-
-**ZeroGrid** is an infrastructure-independent disaster resilience platform tailored for **Track 2: Heat and Water** of the Bharat Builds Hackathon.
-
-ZeroGrid decentralizes disaster telemetry by turning every citizen's Android smartphone into an autonomous mesh relay node. Using Bluetooth Low Energy (BLE) and Wi-Fi Direct, devices broadcast localized hazard beacons peer-to-peer. When any node encounters an active connection, it acts as a **"Data Mule"**, uplinking telemetry to an **AWS Cloud Brain** powered by the **AWS Strands Agents SDK**.
-
-The agent cross-references live user travel vectors against real-time water depth and heat indexes, generating proactive audio/visual bypass routes for citizens and automated crisis briefings for city authorities.
-
----
-
-## 3. Core Innovation Pillars
-
-### 3.1 The Edge Layer: Offline-First P2P Mesh & Data Mules
-- **Zero-Cellular Telemetry**: Devices form autonomous ad-hoc P2P networks using BLE GATT and Wi-Fi Direct sockets. Packets hop device-to-device across a 5-hop TTL with loop-prevention deduplication.
-- **`HAZARD_BEACON` Protocol**: Nodes broadcast compact, byte-efficient telemetry:
-  - `WATERLOGGING` (with measured `waterDepthCm` and passability status)
-  - `SUBMERGED_UNDERPASS`
-  - `FALLEN_POWERLINE` / `LIVE_WIRE`
-  - `HEATWAVE_SHELTER` / `COOLING_CENTER`
-  - `ROAD_BLOCKAGE` & `STRUCTURAL_COLLAPSE`
-- **Opportunistic Data Mule Ingress**: When any citizen walks or drives near an area with residual cellular reception, their device automatically flushes the local mesh packet store to the AWS backend in bulk via WorkManager with exponential backoff.
-
-### 3.2 The Cloud Brain: AWS Strands Agents SDK Integration
-- **Framework Compliance**: Built on the official AWS open-source framework: `@strands-agents/sdk`.
-- **Spatial Tool Calling**: The Strands Agent is equipped with spatial tools (`queryNearbyHazards`, `evaluatePassabilityMatrix`, `calculateBypassWaypoints`, `synthesizeSituationBrief`).
-- **Dynamic Vehicle Clearance Matrix**: The agent cross-references user vehicle profiles (Hatchback $\le 20\text{ cm}$, Sedan $\le 25\text{ cm}$, SUV $\le 45\text{ cm}$, 4x4 $\le 70\text{ cm}$) against real-time water depths to calculate whether a corridor is safe, hazardous, or impassable.
-
-### 3.3 The Citizen Experience: Proactive Driver Copilot
-- **200m–500m Geofenced System Alert Window**: A background proximity monitor running in a foreground service triggers a high-priority `SYSTEM_ALERT_WINDOW` over any application or lockscreen when the user approaches an active hazard.
-- **Hands-Free Audio Warning**: Speaks out danger alerts: *"Warning! 45 cm deep waterlogging detected 300 meters ahead at Milan Subway. Re-routing via elevated flyover."*
-- **In-App Interactive Route Preview**: Renders the complete OSRM safe bypass polyline, danger circles, and evasion waypoints directly on an interactive Google Map before handing off to turn-by-turn navigation.
-- **Dual-List Risk Classification**:
-  - 🛡 **Avoided by GridZero**: Hazards successfully detoured around.
-  - ⚠️ **Unavoidable Hazards to Face Anyway**: Residual conditions near destination gates, paired with tactical driving advice (e.g., maintaining 1st gear, low throttle).
-
-### 3.4 The Municipal Experience: AWS Amplify Command Center
-- **Deployed on AWS Amplify**: Globally accessible, responsive command dashboard for municipal corporations (e.g., BMC, BBMP, NDMC).
-- **Live Spatial Incident Map**: Real-time visualization of flood depths, submerged underpasses, and heatwave shelter capacities.
-- **Automated AI Crisis Briefings**: Municipal operators trigger one-click Strands Agent briefings summarizing blocked arteries, stranded vehicle clusters, and optimal pump deployment zones.
-
----
-
-## 4. End-to-End System Architecture
+ZeroGrid is architected as a 4-tier hybrid distributed system designed to maintain zero-latency spatial intelligence even during total cellular and power grid failure.
 
 ```
-┌────────────────────────────────────────────────────────────────────────────────────────┐
-│                        EDGE TIER: BHARAT DISASTER GROUND ZERO                          │
-│                                                                                        │
-│   [Citizen A (Offline)] ───(BLE GATT)───► [Citizen B (Relay)]                          │
-│     • Spots 60cm waterlogging                • Propagates packet                       │
-│     • Broadcasts HAZARD_BEACON               • TTL decremented                         │
-│                                                      │ (Wi-Fi Direct P2P)              │
-│                                                      ▼                                 │
-│                                            [Citizen C (Data Mule)]                     │
-│                                            • Moves near cellular tower                 │
-│                                            • Opportunistic uplink                      │
-└──────────────────────────────────────────────┬─────────────────────────────────────────┘
-                                               │ HTTPS REST / Bulk Mule API
-                                               ▼
-┌────────────────────────────────────────────────────────────────────────────────────────┐
-│                         AWS CLOUD BRAIN (HOSTED ON AWS)                                │
-│                                                                                        │
-│  ┌───────────────────────┐   ┌────────────────────────┐   ┌─────────────────────────┐  │
-│  │ AWS Amplify           │   │ AWS ECS / Fargate      │   │ AWS Strands Agents SDK  │  │
-│  │ Municipal Web Console │◄──┤ Express 5 Backend Node │◄──┤ @strands-agents/sdk     │  │
-│  │ Next.js 16 Dashboard  │   │ REST & Socket.IO       │   │ Spatial Tool Reasoner   │  │
-│  └───────────────────────┘   └───────────┬────────────┘   └─────────────────────────┘  │
-│                                          │                                             │
-│                                          ▼                                             │
-│                              ┌────────────────────────┐                                │
-│                              │ Amazon DocumentDB      │                                │
-│                              │ (MongoDB Compatible)   │                                │
-│                              │ 2dsphere Geo-Indexes   │                                │
-│                              └────────────────────────┘                                │
-└──────────────────────────────────────────┬─────────────────────────────────────────────┘
-                                           │
-                                           ▼
-┌────────────────────────────────────────────────────────────────────────────────────────┐
-│                      PROACTIVE CITIZEN & MUNICIPAL ACTION                              │
-│                                                                                        │
-│   [CITIZEN DRIVER COPILOT]                     [MUNICIPAL COMMAND CENTER]              │
-│   • Background Geofence Alert (<200m)          • Real-time heat & water incident map   │
-│   • In-App OSRM Visual Route Preview           • Strands Agent Crisis Briefing         │
-│   • Avoided vs. Unavoidable Breakdown          • Pump-truck & cooling center dispatch  │
-│   • Google Maps Navigation Handoff             • Multi-agency situational awareness    │
-└────────────────────────────────────────────────────────────────────────────────────────┘
+═══════════════════════════════════════════════════════════════════════════════════════════════════════════════
+ TIER 1: DECENTRALIZED EDGE MESH (OFFLINE CITIZENS & SENSORS)
+═══════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+  [Node A: Citizen / Field Scout]
+     │  (Detects 45cm waterlogging / Fallen 11kV line)
+     │  Encapsulates into HAZARD_BEACON packet
+     │
+     ├──► [BLE 5.0 Advertisements / GATT Client-Server]
+     │      Range: ~30-100m | Payload: 512 bytes | Zero Router Infrastructure
+     │
+     ▼
+  [Node B: Intermediate Peer Device]
+     │  - DeduplicationCache checks packetId (LRU Bloom filter)
+     │  - Decrements TTL (max 5 hops), appends hop metric
+     │  - Re-broadcasts over dual BLE + Wi-Fi Direct sockets
+     │
+     ▼
+  [Node C: Opportunistic Data Mule]
+     │  - Accumulates mesh packets in encrypted local SQLite/Room storage
+     │  - Moves into area with cellular coverage (LTE / 5G / Starlink uplink)
+     │  - Triggers WorkManager exponential-backoff bulk sync
+     │
+     └────────────────────────────────────────────────────────────┐
+                                                                  │ HTTPS REST / TLS 1.3
+                                                                  ▼
+═══════════════════════════════════════════════════════════════════════════════════════════════════════════════
+ TIER 2: CLOUD INGESTION & SPATIAL DATA PLATFORM (AWS CLOUD INFRASTRUCTURE)
+═══════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+  ┌───────────────────────────────────────────────────────────────┴───────────────────────────────────────────┐
+  │ AWS ECS / Fargate Cluster (Express 5 + Node.js 20 Microservices)                                          │
+  │                                                                                                           │
+  │   [POST /api/sos/bulk-mule] ──► Deduplication & Ingestion Pipeline                                       │
+  │                                         │                                                                 │
+  │   [POST /api/routes/detour] ────────────┼───────────┐                                                     │
+  │                                         ▼           ▼                                                     │
+  │   [Socket.IO Server /sos] ──────► Real-Time Event Dispatcher (sos:new, sos:updated)                       │
+  └─────────────────────────────────────────┬─────────────────────────────────────────────────────────────────┘
+                                            │
+                                            ▼
+  ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ Amazon DocumentDB (MongoDB 5.0 Compatible Spatial Database)                                              │
+  │  - 2dsphere Geospatial Index on `location.coordinates` [lng, lat]                                        │
+  │  - Collections: `soses` (Hazard Telemetry), `users`, `emergencynotes`                                     │
+  │  - $nearSphere and $geoWithin queries execute in < 4ms for 10km geo-windows                              │
+  └─────────────────────────────────────────┬─────────────────────────────────────────────────────────────────┘
+                                            │
+                                            ▼
+═══════════════════════════════════════════════════════════════════════════════════════════════════════════════
+ TIER 3: AUTONOMOUS AGENTIC REASONING & DETOUR ENGINE
+═══════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+  ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ AWS Strands Agents SDK Framework (@strands-agents/sdk)                                                    │
+  │                                                                                                           │
+  │   Foundation Model: Claude 3.5 Sonnet / Haiku via Amazon Bedrock                                          │
+  │                                                                                                           │
+  │   [Agent Tool Execution Pipeline]:                                                                        │
+  │   ├── Tool: query_nearby_hazards(lat, lng, radiusKm, category)                                            │
+  │   │     └── Pulls verified telemetry: waterDepthCm, passability, structural damage                        │
+  │   ├── Tool: evaluate_vehicle_risk(vehicleType, waterDepthCm)                                              │
+  │   │     └── Evaluates mechanical clearance (Sedan 20cm, SUV 45cm, 4x4 70cm)                             │
+  │   ├── Tool: compute_evasion_corridor(origin, dest, infectedCentroids)                                     │
+  │   │     └── Calculates orthogonal offset waypoints (±90°, 350m buffer) around hazard zones                │
+  │   └── Tool: synthesize_municipal_situation_brief(incidentClusterGeoJson)                                  │
+  │         └── Aggregates stranded citizen clusters and pump-truck deployment priorities                     │
+  └─────────────────────────────────────────┬─────────────────────────────────────────────────────────────────┘
+                                            │
+                                            ▼
+  ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │ OSRM (Open Source Routing Machine) Service Engine                                                         │
+  │  - Direct Polyline Endpoint: /route/v1/driving/{lng1,lat1;lng2,lat2;...}                                 │
+  │  - Computes driving polyline geometry passing strictly through verified evasion waypoints                 │
+  │  - Returns GeoJSON LineString coordinates, distance (meters), and duration (seconds)                      │
+  │  - Offline Piecewise Geodesic Fallback: Guarantees routing geometry on edge device when fully disconnected│
+  └─────────────────────────────────────────┬─────────────────────────────────────────────────────────────────┘
+                                            │
+                       ┌────────────────────┴────────────────────┐
+                       │                                         │
+                       ▼                                         ▼
+═══════════════════════════════════════════════════════════════════════════════════════════════════════════════
+ TIER 4: CLIENT ACTION SURFACES
+═══════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+  [SURFACE A: ANDROID PROACTIVE DRIVER COPILOT]             [SURFACE B: AWS AMPLIFY MUNICIPAL CONSOLE]
+  • HazardProximityMonitor (60s tick, 0 network)            • Next.js 16 Web Dashboard on AWS Amplify
+  • SYSTEM_ALERT_WINDOW (<200m danger breach)               • Real-Time Google Maps / Tactical Canvas Layer
+  • SafeRoutePreviewMap:                                    • Socket.IO Live Telemetry Feed
+    - In-App GoogleMap Polyline Rendering                   • One-Click Strands Agent Crisis Briefing
+    - Danger Zones (100-150m circles)                       • Dispatcher Pump Truck & Barricade Directives
+    - 🛡 Avoided Hazards vs. ⚠️ Unavoidable Risks           • Multi-Agency Audit Trail & Incident Resolution
+  • Google Maps Navigation Handoff via Intent
 ```
 
 ---
 
-## 5. AWS Cloud & Agentic Architecture
+## 2. Edge Mesh Protocol Specification (`gridzero`)
 
-### 5.1 AWS Strands Agents SDK Pipeline
+### 2.1 Packet Envelope Specification
 
-ZeroGrid leverages the **AWS Strands Agents SDK** (`@strands-agents/sdk`) to execute deterministic and LLM-augmented spatial reasoning:
+Packets flowing through the P2P mesh network are serialized as deterministic, low-overhead UTF-8 JSON structures designed to fit within BLE MTU constraints:
 
-```
-                          ┌───────────────────────────┐
-                          │   Incoming Hazard Event   │
-                          │   (Telemetry / SOS Mule)  │
-                          └─────────────┬─────────────┘
-                                        │
-                                        ▼
-┌─────────────────────────────────────────────────────────────────────────────────────────┐
-│                          AWS STRANDS AGENT ORCHESTRATOR                                 │
-│                                                                                         │
-│   Agent Model: Claude 3.5 Sonnet / Haiku via Amazon Bedrock (Strands Execution Loop)    │
-│                                                                                         │
-│   Registered Agent Tools:                                                               │
-│   1. get_nearby_hazards(lat, lng, radiusKm, category)                                   │
-│   2. assess_vehicle_risk(vehicleType, waterDepthCm, passability)                        │
-│   3. calculate_evasion_corridor(origin, dest, hazardCoordinates)                       │
-│   4. generate_municipal_briefing(incidentClusters, infrastructureStatus)                │
-└───────────────────────────────────────┬─────────────────────────────────────────────────┘
-                                        │
-                   ┌────────────────────┴────────────────────┐
-                   ▼                                         ▼
-┌─────────────────────────────────────┐   ┌─────────────────────────────────────┐
-│      Citizen Detour Strategy        │   │     Municipal Action Directive      │
-│  • Evasion waypoints (+350m offset) │   │  • Blockade Malad Subway (65cm)     │
-│  • Dual-Category classification     │   │  • Dispatch 2 pumps to SV Road      │
-│  • Google Maps intent payload       │   │  • Open BKC Cooling Shelter #4      │
-└─────────────────────────────────────┘   └─────────────────────────────────────┘
+```json
+{
+  "packetId": "43659c0a-9e55-49e5-8a46-d06093bdee74",
+  "senderId": "node-android-a910f",
+  "recipientId": null,
+  "type": "HAZARD_BEACON",
+  "payload": {
+    "category": "WATERLOGGING",
+    "waterDepthCm": 45,
+    "passability": "IMPASSABLE_SEDANS",
+    "lat": 19.0825,
+    "lng": 72.8411,
+    "accuracy": 4.2,
+    "batteryPercentage": 78,
+    "message": "Milan Subway water depth 45cm and rising. 2 hatchbacks stalled."
+  },
+  "timestamp": 1728374120000,
+  "ttl": 5,
+  "hopCount": 0
+}
 ```
 
-### 5.2 AWS Cloud Infrastructure Blueprint
+#### Field Constraints
+- `packetId` (UUIDv4, 36 bytes): Universally unique identifier used for deduplication.
+- `type` (Enum): `HAZARD_BEACON`, `SOS_BEACON`, `PEER_DISCOVERY`, `DIRECT_MESSAGE`, `CHANNEL_BROADCAST`.
+- `ttl` (Integer): Time-to-Live, initialized to `5`. Decremented at each hop. Dropped when `ttl <= 0`.
+- `hopCount` (Integer): Incremented at each relay to track mesh network diameter.
 
-| AWS Service | Role in ZeroGrid | Benefit |
+### 2.2 Deduplication Engine & Loop Prevention
+
+To prevent packet storms in dense mesh clusters:
+1. **LRU In-Memory Ring Buffer**: `DeduplicationCache.kt` tracks the last 10,000 processed `packetId` entries with a 30-minute expiration window.
+2. **Reverse Path Check**: Packets received with `senderId == localNodeId` or `packetId` existing in cache are silently dropped.
+3. **Hop Budget**: Packets reaching `ttl == 0` are discarded before reaching the radio driver queue.
+
+### 2.3 Dual Hardware Transport Drivers
+
+```
+                ┌──────────────────────────────────────┐
+                │          MeshRoutingEngine           │
+                └──────────────────┬───────────────────┘
+                                   │
+                  ┌────────────────┴────────────────┐
+                  ▼                                 ▼
+   ┌───────────────────────────────┐ ┌───────────────────────────────┐
+   │        BleMeshDriver          │ │     WifiDirectMeshDriver      │
+   ├───────────────────────────────┤ ├───────────────────────────────┤
+   │ • BLE 5.0 Advertisements      │ │ • Wi-Fi P2P Group Formation   │
+   │ • 128-bit Custom Service UUID │ │ • High-Throughput TCP Sockets │
+   │ • GATT Client & Server Roles  │ │ • Batch Data Mule Sync        │
+   │ • Payload: Small Beacons      │ │ • Payload: Media & Chat Logs  │
+   └───────────────────────────────┘ └───────────────────────────────┘
+```
+
+- **`BleMeshDriver.kt`**:
+  - Implements simultaneous Bluetooth LE peripheral advertising and central scanning.
+  - Custom 128-bit Service UUID: `0000FFF0-0000-1000-8000-00805F9B34FB`.
+  - Transmits compact 24-byte identification beacons via manufacturer data; larger envelopes are transmitted over transient GATT connections.
+- **`WifiDirectMeshDriver.kt`**:
+  - Automatically negotiates Wi-Fi P2P group ownership (`WifiP2pManager`).
+  - Opens TCP server sockets on port `8888` for high-throughput batch synchronization between proximate devices.
+
+---
+
+## 3. Autonomous Safety Agent & OSRM Detour Engine
+
+### 3.1 Autonomous Agent Architecture (`RouteSafetyAgent.kt`)
+
+The agent is decoupled through a future-ready, pluggable Kotlin contract:
+
+```kotlin
+interface RouteSafetyAgent {
+    suspend fun executeSafeRoute(
+        origin: LatLng,
+        destination: LatLng,
+        cachedHazards: List<CachedHazard>
+    ): RouteSafetyReport
+}
+```
+
+#### Deterministic Spatial Algorithm (`RuleBasedRouteSafetyAgent`)
+1. **Geodesic Corridor Intersection**:
+   Calculates the cross-track perpendicular distance from every hazard point $P(lat, lng)$ to the direct geodesic segment connecting Origin $A$ and Destination $B$:
+   $$d_{cross} = \arcsin\left(\sin\left(\frac{dist(A, P)}{R}\right) \cdot \sin(\theta_{AP} - \theta_{AB})\right) \cdot R$$
+   Hazards within $d_{cross} \le 160\text{ meters}$ are flagged as corridor collisions.
+
+2. **Orthogonal Evasion Waypoint Derivation**:
+   For the top 3 highest-severity colliding hazards, the agent computes evasion waypoints shifted orthogonally ($\pm 90^\circ$ relative to bearing $\theta_{AB}$) by 350 meters:
+   $$\phi_2 = \arcsin\left(\sin(\phi_1)\cos(d/R) + \cos(\phi_1)\sin(d/R)\cos(\theta \pm 90^\circ)\right)$$
+   $$\lambda_2 = \lambda_1 + \text{atan2}\left(\sin(\theta \pm 90^\circ)\sin(d/R)\cos(\phi_1), \cos(d/R) - \sin(\phi_1)\sin(\phi_2)\right)$$
+
+3. **OSRM Route Execution**:
+   Queries OSRM driving service passing `[Origin, Waypoint_1, ..., Waypoint_n, Destination]` to generate the driving polyline geometry.
+
+4. **Dual-Category Impact Classification**:
+   - 🛡 **Hazards Avoided**: Hazards where direct distance $\le 160\text{m}$ but safe polyline distance $> 200\text{m}$.
+   - ⚠️ **Unavoidable Risks**: Hazards remaining within $180\text{m}$ of the final path (e.g., at user origin or destination gate), appended with dynamic vehicle clearance survival tips.
+
+### 3.2 OSRM Routing Service (`OsrmRoutingService.kt`)
+
+- **Primary Path**: Calls OSRM API endpoint:
+  ```
+  GET https://router.project-osrm.org/route/v1/driving/{lng1},{lat1};{lng2},{lat2};...;{destLng},{destLat}?overview=full&geometries=geojson&steps=false
+  ```
+- **Parsing**: Deserializes GeoJSON `LineString` coordinates into `List<LatLng>`, extracting `distance` (meters) and `duration` (seconds).
+- **Offline Interpolation Fallback**: When offline or if OSRM is unreachable, computes smooth piecewise geodesic interpolation points spaced every 150m between origin, waypoints, and destination, guaranteeing route visual rendering never fails.
+
+### 3.3 Offline Hazard Cache Manager (`HazardCacheManager.kt`)
+
+- **Dual-Layer Storage**: Thread-safe in-memory `AtomicReference<List<CachedHazard>>` backed by persistent AndroidX DataStore JSON serialization (`hazard_cache.preferences_pb`).
+- **Geo-Window**: Maintains all active hazard SOS events within a 10 km radius.
+- **Refresh Policy**:
+  - Condition 1: Network connectivity restored (`ConnectivityChecker`).
+  - Condition 2: Cache age exceeds TTL of 5 minutes (`CACHE_TTL_MS = 300,000`).
+  - Condition 3: User location drifts $> 1\text{ km}$ from the last fetch origin (`LOCATION_DRIFT_M = 1,000`).
+
+---
+
+## 4. Proactive Driver Copilot & Overlay Architecture
+
+### 4.1 System Alert Window Lifecycle (`SYSTEM_ALERT_WINDOW`)
+
+```
+                        [MeshForegroundService]
+                                   │
+                   (Every 60s non-blocking tick)
+                                   ▼
+                      [HazardProximityMonitor]
+                                   │
+           Reads: LocationHelper.getLastKnownLocation()
+           Reads: HazardCacheManager.getCachedHazards()
+           (ZERO network calls | ZERO wake-lock leaks)
+                                   │
+                 Haversine Distance <= 200 meters?
+                                   │
+                        YES ───────┴─────── NO ──► (Sleep 60s)
+                         │
+                         ▼
+               [OverlayAlertManager]
+                         │
+                         ├── WindowManager.addView()
+                         │   • Layout: TYPE_APPLICATION_OVERLAY
+                         │   • Window Flags: NOT_TOUCH_MODAL | KEEP_SCREEN_ON
+                         │   • Soft Input: SOFT_INPUT_ADJUST_RESIZE
+                         │
+                         ├── Ringtone: TYPE_ALARM (Looping emergency alert)
+                         ├── Vibrator: [0, 400, 200, 400, 800] ms cadence
+                         │
+                         ▼
+                [HazardOverlayView] (Compose over any app / lockscreen)
+                         │
+       ┌─────────────────┼─────────────────┬─────────────────┐
+       ▼                 ▼                 ▼                 ▼
+  Step 1: WARNING   Step 2: VEHICLE   Step 3: RISK      Step 4: DEST
+  - Hazard Type     - Sedan/Hatch     - Clearance       - Geocoder Search
+  - Water Depth     - SUV / 4x4       - Safe / Impass   - Map Pin Tap
+  - Close '✕' btn   - Walking         - Evade Advice    - Agent Analysis
+                                                             │
+                                                             ▼
+                                                    Step 5: ROUTE_READY
+                                                    - SafeRoutePreviewMap
+                                                    - Polyline & Danger Circles
+                                                    - Avoided vs Unavoidable
+                                                    - Google Maps Handoff
+```
+
+### 4.2 In-App Interactive Route Preview (`SafeRoutePreviewMap.kt`)
+
+Renders directly inside Compose before launching third-party navigation apps:
+- **`GoogleMap` Composable**:
+  - `Polyline`: Color `#29B6F6`, width `12f` representing verified safe geometry.
+  - `Marker(Origin)`: Green circle icon for user GPS fix.
+  - `Marker(Destination)`: Finish flag pin.
+  - `Circle(DangerZones)`: Red (`0x33FF5252`) and Green (`0x334CAF50`) translucent circular buffers (100–120m radius) around hazard coordinates.
+  - `CameraPositionState`: Automatically computes `LatLngBounds` enclosing origin, destination, and all waypoints with 80dp padding.
+- **`MapsIntentBuilder.kt`**: Deep-links into the Google Maps app:
+  ```
+  https://www.google.com/maps/dir/?api=1&origin={lat},{lng}&destination={lat},{lng}&travelmode=driving&waypoints={wp1_lat},{wp1_lng}|{wp2_lat},{wp2_lng}
+  ```
+  Forcing Google Maps navigation to follow the exact safety corridor verified by the agent.
+
+---
+
+## 5. AWS Cloud & Strands Agent Orchestration
+
+### 5.1 AWS Strands Agents Framework Integration (`@strands-agents/sdk`)
+
+The cloud orchestrator runs on **AWS ECS Fargate** using `@strands-agents/sdk` to evaluate spatial telemetry batches uploaded by Data Mules:
+
+```javascript
+import { Agent, BedrockModel, tool } from '@strands-agents/sdk';
+
+// 1. Tool Definition: Spatial Radius Telemetry Query
+const queryNearbyHazards = tool({
+  name: 'queryNearbyHazards',
+  description: 'Searches DocumentDB for active waterlogging and powerline hazards within radius',
+  parameters: {
+    lat: { type: 'number', required: true },
+    lng: { type: 'number', required: true },
+    radiusKm: { type: 'number', default: 10.0 }
+  },
+  execute: async ({ lat, lng, radiusKm }) => {
+    return await SosEvent.find({
+      status: { $in: ['ACTIVE', 'ACKNOWLEDGED'] },
+      location: {
+        $nearSphere: {
+          $geometry: { type: 'Point', coordinates: [lng, lat] },
+          $maxDistance: radiusKm * 1000
+        }
+      }
+    }).lean();
+  }
+});
+
+// 2. Tool Definition: Passability & Vehicle Clearance Assessment
+const assessVehicleRisk = tool({
+  name: 'assessVehicleRisk',
+  description: 'Evaluates vehicle mechanical passability against water depth',
+  parameters: {
+    vehicleType: { type: 'string', required: true },
+    waterDepthCm: { type: 'number', required: true }
+  },
+  execute: async ({ vehicleType, waterDepthCm }) => {
+    const limits = { HATCHBACK: 20, SEDAN: 25, SUV: 45, FOUR_BY_FOUR: 70 };
+    const maxSafe = limits[vehicleType.toUpperCase()] || 20;
+    return {
+      isPassable: waterDepthCm < maxSafe,
+      riskLevel: waterDepthCm >= maxSafe ? 'CRITICAL_IMPASSABLE' : 'CAUTION_PROCEED',
+      maxSafeDepthCm: maxSafe
+    };
+  }
+});
+
+// 3. Agent Instantiation
+export const disasterResilienceAgent = new Agent({
+  model: new BedrockModel({
+    modelId: 'anthropic.claude-3-5-sonnet-20241022-v2:0',
+    region: process.env.AWS_REGION || 'ap-south-1'
+  }),
+  systemPrompt: `You are the ZeroGrid Urban Climate Resilience Agent.
+Your role is to analyze flood and heatwave telemetry from mesh networks,
+compute safe evasion corridors avoiding flooded underpasses (depth >= 30cm)
+and live electrical wires, and formulate operational briefings for municipal command.`,
+  tools: [queryNearbyHazards, assessVehicleRisk]
+});
+```
+
+### 5.2 AWS Cloud Infrastructure Topology
+
+| Component | AWS Implementation | Configuration / Role |
 |---|---|---|
-| **AWS Amplify** | Hosting & CI/CD for Municipal Web Dashboard | Global low-latency CDN, instant pull-request previews, zero-config Next.js 16 deployment. |
-| **AWS ECS / Fargate** | Containerized Express backend & Socket.IO server | Serverless container orchestration that auto-scales during cloudburst traffic spikes. |
-| **Amazon Bedrock** | Foundation model provider for Strands Agents SDK | Enterprise-grade, low-latency generative inference within AWS data centers. |
-| **Amazon DocumentDB** | Managed MongoDB-compatible spatial database | Native `2dsphere` geospatial indexing for high-speed radius queries. |
-| **Amazon SNS / SQS** | Telemetry ingestion queue & push notification fanout | Decouples mobile data-mule batch submissions from real-time socket broadcasts. |
+| **Municipal Dashboard** | **AWS Amplify Hosting** | Next.js 16 SSR + Static Pages. Deployed via Git-based CI/CD pipeline on Amplify. |
+| **API & Socket Backend** | **AWS ECS on AWS Fargate** | Express 5 Node.js container. Auto-scaling policy based on CPU/Memory and incoming connection surges. |
+| **Agentic AI Model** | **Amazon Bedrock** | Provides Claude 3.5 Sonnet / Haiku execution for the `@strands-agents/sdk` runtime. |
+| **Spatial Database** | **Amazon DocumentDB** | MongoDB 5.0 compatible. Multi-AZ cluster with `2dsphere` indexes on geospatial collections. |
+| **Notification Broker** | **Amazon SNS + FCM** | High-priority push notifications dispatched to registered family contacts and field rescue units. |
 
 ---
 
-## 6. Android Edge Engineering (`gridzero`)
+## 6. REST API & WebSocket Interface
 
-The Android application is built in **100% Kotlin with Jetpack Compose** and operates without cloud dependencies.
+### 6.1 Telemetry & Detour REST Endpoints
 
-### 6.1 BLE & Wi-Fi Direct Mesh Engine
-- **Dual-Radio Driver Architecture**:
-  - `BleMeshDriver.kt`: Operates custom BLE advertising and scanning service with GATT servers for small telemetry packets.
-  - `WifiDirectMeshDriver.kt`: Opens high-throughput Wi-Fi P2P groups for bulk sync when nodes remain proximate.
-- **Routing Engine (`MeshRoutingEngine.kt`)**: Implements ad-hoc flooding with a 5-hop TTL and in-memory LRU deduplication (`DeduplicationCache.kt`), preventing packet storms across dense clusters.
-- **Background Persistence**: Kept alive via `MeshForegroundService.kt` with explicit `FOREGROUND_SERVICE_TYPE_LOCATION` compliance for Android 14+.
+```
+POST /api/sos/bulk-mule
+Content-Type: application/json
+Authorization: Bearer <JWT>
 
-### 6.2 Proactive System Alert Window (`SYSTEM_ALERT_WINDOW`)
-- **Zero-Power Geofence Monitor (`HazardProximityMonitor.kt`)**: Ticks once every 60 seconds reading the user's last-known GPS coordinates and evaluating distance against `HazardCacheManager.kt`. Routine checks require **0 network calls**.
-- **System Overlay (`OverlayAlertManager.kt` & `HazardOverlayView.kt`)**: When a user breaches the 200m hazard threshold, a full-screen alert overlay inflates over any app or lockscreen with an alarm ringtone and distinct vibration cadence.
-- **Interactive Triage**: Drivers select their vehicle type, view clearance risk assessments, search destinations, and inspect the safe bypass route before dismissing the overlay.
+{
+  "packets": [
+    {
+      "packetId": "e1f2a3b4-...",
+      "lat": 19.0760,
+      "lng": 72.8777,
+      "category": "WATERLOGGING",
+      "waterDepthCm": 50,
+      "passability": "IMPASSABLE",
+      "transport": "MESH",
+      "ts": 1728374100000
+    }
+  ]
+}
+```
+**Response (200 OK):**
+```json
+{
+  "accepted": 1,
+  "duplicates": 0
+}
+```
 
-### 6.3 OSRM Autonomous Route Engine & Dual-Category Analysis
-- **Routing Engine (`OsrmRoutingService.kt`)**: Integrates Open Source Routing Machine driving algorithms (`/route/v1/driving`) with custom intermediate evasion waypoints, parsing GeoJSON polylines into map coordinates.
-- **Offline Interpolation Fallback**: Automatically generates piecewise geodesic coordinates if internet is severed.
-- **Autonomous Safety Agent (`RouteSafetyAgent.kt`)**:
-  - Evaluates direct corridors against local database hazard clusters.
-  - Shifts evasive waypoints orthogonally ($\pm 90^\circ$, 350m offset) around hazard centers.
-  - Outputs a **Dual-Category Impact Assessment**:
-    - 🛡 **Hazards Avoided**: Submerged underpasses and live power cables detoured around.
-    - ⚠️ **Unavoidable Hazards**: Residual puddling near destination gates with tactical survival advice.
-- **In-App Visual Preview (`SafeRoutePreviewMap.kt`)**: Renders an interactive map with the safe route polyline, origin/destination pins, hazard danger circles, and evasion waypoints before triggering Google Maps navigation.
+```
+POST /api/routes/detour
+Content-Type: application/json
 
-### 6.4 Offline Hazard Cache Manager & Monitored Categories
-- **Persistence (`HazardCacheManager.kt`)**: Stores hazard SOS events within 10 km in an atomic in-memory reference and persists to AndroidX DataStore JSON.
-- **Automatic Refresh Triggers**: Re-fetches only when internet is restored, after a 5-minute TTL, or when the user moves $> 1\text{ km}$ from the last fetch center.
-- **Supported Hazards**: `WATERLOGGING`, `SUBMERGED_UNDERPASS`, `DRAINAGE_OVERFLOW`, `FALLEN_POWERLINE`, `LIVE_WIRE`, `POWER_OUTAGE`, `FALLEN_TREE`, `STRUCTURAL_COLLAPSE`, `ROAD_BLOCKAGE`.
+{
+  "originLat": 19.0760,
+  "originLng": 72.8777,
+  "destLat": 19.1136,
+  "destLng": 72.8697
+}
+```
+**Response (200 OK):**
+```json
+{
+  "safeRouteGeoJson": "{\"type\":\"LineString\",\"coordinates\":[[72.8777,19.0760],[72.8710,19.0920],[72.8697,19.1136]]}",
+  "warningMessage": "Detoured around 2 critical flood hazards at Milan Subway.",
+  "avoidedHazardsCount": 2,
+  "agentReasoning": "Corridor passed within 60m of 50cm waterlogging. Shifted path 350m west onto SV Road elevated corridor."
+}
+```
+
+### 6.2 Real-Time WebSocket Interface (`/sos` namespace)
+
+- **`connection`**: Clients establish bidirectional WebSocket stream over TLS.
+- **`sos:new`**: Broadcast when a fresh hazard or citizen SOS is registered (via mesh mule or direct uplink).
+- **`sos:updated`**: Broadcast when status transitions (`ACTIVE` $\rightarrow$ `ACKNOWLEDGED` $\rightarrow$ `RESOLVED`).
 
 ---
 
-## 7. Municipal Command Center (`gridZeroExpress/frontend`)
-
-Hosted on **AWS Amplify**, the municipal dashboard provides disaster management cells (NDRF, BMC, Traffic Police) with real-time situational control:
-
-- **Google Maps Web Layer (`SosLiveMap.tsx`)**: Renders live water depth markers, heat risk contours, and emergency contact clusters.
-- **Incident Dispatch Drawer (`SosDrawer.tsx`)**: Allows dispatchers to assign pump units, update incident status (`ACTIVE` $\rightarrow$ `ACKNOWLEDGED` $\rightarrow$ `RESOLVED`), and log chronological field notes.
-- **Tactical Fallback Radar (`MapCanvas.tsx`)**: A pure HTML5 Canvas radar for low-bandwidth workstations.
-- **AI Crisis Briefing Generator**: Invokes the AWS Strands Agent to generate structured operational summaries for field command teams.
-
----
-
-## 8. Why ZeroGrid Wins Hackathon Judging
-
-| Judging Dimension | Why ZeroGrid Excels |
-|---|---|
-| **Bharat Builds Theme Fit (Track 2: Heat & Water)** | Directly solves urban Indian monsoon flooding (subways, flooded roads) and severe heatwaves (cooling center discovery, vulnerable citizen monitoring). |
-| **True Infrastructure Independence** | Operates off-grid via P2P Bluetooth/Wi-Fi mesh; zero reliance on cell towers during disaster blackouts. |
-| **AWS Technical Depth** | Built with AWS Amplify (hosting), AWS ECS/Fargate (backend), and the official AWS Strands Agents SDK (`@strands-agents/sdk`). |
-| **Agentic Innovation** | Uses autonomous spatial tool-calling agents for live corridor hazard avoidance rather than basic static routing. |
-| **Production-Grade Engineering** | 100% Kotlin Compose, Android 14+ foreground service compliance, robust offline DataStore caching, and Google Maps deep-link navigation handoff. |
-
----
-
-## 9. Project Directory Structure
+## 7. Codebase Directory Organization
 
 ```
 AndroidStudioProjects/
-├── gridzero/                               # Android Native Client (Kotlin / Compose)
+├── gridzero/                               # Android Application (Kotlin / Compose)
 │   ├── app/src/main/
 │   │   ├── java/com/example/zerogrid/
-│   │   │   ├── admin/                      # Mobile Admin Panel & Tactical Radar
-│   │   │   ├── auth/                       # Local & Google OAuth Authentication
-│   │   │   ├── emergency/                  # Hazard Overlay, Safety Agent & Safe Route Planner
+│   │   │   ├── admin/                      # Mobile Admin Panel & Tactical Radar Canvas
+│   │   │   ├── auth/                       # Local & Google OAuth2 Authentication
+│   │   │   ├── emergency/                  # Hazard Overlay, Safety Agent & Detour Planning
 │   │   │   │   ├── HazardOverlayView.kt    # Full-screen system alert window
 │   │   │   │   ├── OverlayAlertManager.kt  # SYSTEM_ALERT_WINDOW manager
-│   │   │   │   ├── RouteSafetyAgent.kt     # Autonomous route safety agent
+│   │   │   │   ├── RouteSafetyAgent.kt     # Rule-based safety agent & corridor evaluator
 │   │   │   │   ├── SafeRoutePlannerDialog.kt # Safe route destination modal
 │   │   │   │   ├── SosCenterScreen.kt      # Emergency feed & beacon trigger
 │   │   │   │   └── UnifiedSosDispatcher.kt # Mesh + Cloud parallel dispatcher
-│   │   │   ├── home/                       # Dashboard with NearbyHazardsRadarCard
+│   │   │   ├── home/                       # Dashboard with NearbyHazardsRadarCard.kt
 │   │   │   ├── location/                   # Location & Proximity Geofencing
 │   │   │   │   ├── HazardCacheManager.kt   # 10km offline DataStore hazard cache
 │   │   │   │   ├── HazardProximityMonitor.kt # 60s background geofence loop
-│   │   │   │   ├── LocationHelper.kt       # Multi-provider GPS with Samsung fixes
-│   │   │   │   ├── LocationSearchHelper.kt # Unified geocoding & OSM search
+│   │   │   │   ├── LocationHelper.kt       # Multi-provider GPS (Samsung FLP compliant)
+│   │   │   │   ├── LocationSearchHelper.kt # Unified geocoding & OSM Nominatim search
 │   │   │   │   └── VehicleRiskCalculator.kt # Vehicle clearance vs water depth matrix
 │   │   │   ├── mesh/                       # MeshEngine, BLE & Wi-Fi Direct Drivers
-│   │   │   ├── network/                    # Retrofit & OsrmRoutingService
+│   │   │   │   ├── engine/                 # RoutingEngine, Packet models, DeduplicationCache
+│   │   │   │   └── transport/              # BleMeshDriver, WifiDirectMeshDriver
+│   │   │   ├── network/                    # Retrofit APIs & OsrmRoutingService.kt
 │   │   │   ├── service/                    # MeshForegroundService (Type: Location)
 │   │   │   └── ui/components/              # NearbyHazardsRadarCard, SafeRoutePreviewMap
 │   │   └── AndroidManifest.xml             # Foreground service & overlay declarations
@@ -289,9 +483,9 @@ AndroidStudioProjects/
 
 ---
 
-## 10. Setup & Deployment Guide
+## 8. Setup & Execution Guide
 
-### 10.1 Backend Setup (AWS ECS / Local)
+### 8.1 Backend Deployment (AWS ECS / Local)
 ```bash
 cd gridZeroExpress/backend
 npm install
@@ -301,18 +495,18 @@ Configure `.env`:
 PORT=5000
 NODE_ENV=development
 MONGODB_URI=mongodb+srv://<user>:<pwd>@cluster.mongodb.net/zerogrid?retryWrites=true&w=majority
-JWT_SECRET=your_super_secret_jwt_key_at_least_32_chars_long
+JWT_SECRET=super_secret_jwt_key_at_least_32_chars_long
 ALLOWED_ORIGINS=http://localhost:3000
 AWS_REGION=ap-south-1
 ```
-Start server:
+Run development server:
 ```bash
 npm run dev
-# Health check: http://localhost:5000/health
-# WebSocket: ws://localhost:5000/sos
+# Health Endpoint: http://localhost:5000/health
+# WebSocket URL:   ws://localhost:5000/sos
 ```
 
-### 10.2 Municipal Dashboard (AWS Amplify / Local)
+### 8.2 Municipal Dashboard Deployment (AWS Amplify / Local)
 ```bash
 cd gridZeroExpress/frontend
 npm install
@@ -322,37 +516,41 @@ Configure `.env.local`:
 NEXT_PUBLIC_API_URL=http://localhost:5000
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=AIzaSy...
 ```
-Start dashboard:
+Start Next.js:
 ```bash
 npm run dev
-# Dashboard live at: http://localhost:3000
+# Dashboard accessible at: http://localhost:3000
 ```
 
-### 10.3 Android Client Setup (`gridzero`)
-1. Open `gridzero` in Android Studio.
-2. In root directory, update `local.properties`:
+### 8.3 Android Application Compilation (`gridzero`)
+1. Open `gridzero` in Android Studio Ladybug (or newer).
+2. Create/update `local.properties` in project root:
    ```properties
    sdk.dir=C:\\Users\\<USER>\\AppData\\Local\\Android\\Sdk
    MAPS_API_KEY=AIzaSy...
    ```
-3. Ensure `google-services.json` is located in `app/`.
-4. Run on a physical Android device (API 26+ / Android 8.0+) to support BLE peripheral advertising.
+3. Verify `google-services.json` is located in `app/`.
+4. Compile and assemble debug APK via CLI:
+   ```bash
+   ./gradlew :app:assembleDebug
+   ```
+5. Deploy to physical Android hardware (API 26+ / Android 8.0+) to enable BLE peripheral advertising.
 
 ---
 
-## 11. Troubleshooting & Hardware Optimization Notes
+## 9. Hardware Optimizations & Edge Troubleshooting
 
-| Observed Behavior | Root Cause | Engineering Solution |
+| Issue / Error | Root Cause | Engineering Solution |
 |---|---|---|
 | **Samsung FLP listener rejection (`10416_FINE_fg_svc_false_foreground`)** | Android 14+ requires foreground services accessing location to specify `foregroundServiceType="location"`. | Declared `FOREGROUND_SERVICE_LOCATION` in manifest and passed `FOREGROUND_SERVICE_TYPE_LOCATION` in `MeshForegroundService.startForeground()`. |
 | **System overlay keyboard blocked** | `WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE` prevented IME keyboard input in the overlay. | Removed `FLAG_NOT_FOCUSABLE` and configured `softInputMode = SOFT_INPUT_ADJUST_RESIZE` in `OverlayAlertManager.kt`. |
-| **Background location freeze on Samsung devices** | Aggressive vendor battery management suspends fused location listeners. | Implemented multi-provider polling (`PASSIVE_PROVIDER`, `FUSED_PROVIDER`, `getCurrentLocation()`) in `LocationHelper.kt`. |
-| **BLE advertising failure (`ADVERTISE_FAILED_FEATURE_UNSUPPORTED`)** | Android Emulator lacks hardware BLE peripheral mode. | Run on physical hardware for full P2P mesh testing. |
-| **High Logcat frame invalidation (`gralloc4`)** | Infinite layout animations in top bars. | Replaced infinite transitions with static indicator chips. |
+| **Background location freeze on Samsung devices** | Aggressive vendor power management suspends standard fused listeners. | Implemented multi-provider polling (`PASSIVE_PROVIDER`, `FUSED_PROVIDER`, `getCurrentLocation()`) in `LocationHelper.kt`. |
+| **BLE advertising failure (`ADVERTISE_FAILED_FEATURE_UNSUPPORTED`)** | Android Emulator lacks hardware BLE peripheral mode. | Run on physical Android hardware for mesh radio verification. |
+| **High Logcat frame invalidation (`gralloc4`)** | Infinite layout animations recalculating every frame in top bars. | Replaced infinite transitions with static indicator chips. |
 
 ---
 
 <p align="center">
-  <b>Built with ❤️ for Bharat Builds Hackathon 2026</b><br>
-  <i>Empowering Indian Cities Against Climate Disasters Through Decentralized Technology</i>
+  <b>ZeroGrid Engineering Team — Bharat Builds Hackathon 2026</b><br>
+  <i>Decentralized Mesh Networking & Autonomous Agentic Climate Resilience</i>
 </p>
