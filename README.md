@@ -42,6 +42,14 @@
 9. [Security, Roles & Permission Model](#9-security-roles--permission-model)
 10. [Setup, Execution & Configuration Guide](#10-setup-execution--configuration-guide)
 11. [Troubleshooting & Known Architecture Notes](#11-troubleshooting--known-architecture-notes)
+12. [Proactive Hazard Intelligence & Autonomous Safe Route Engine](#12-proactive-hazard-intelligence--autonomous-safe-route-engine)
+   - 12.1 [System Alert Overlay & Proximity Geofencing (`SYSTEM_ALERT_WINDOW`)](#121-system-alert-overlay--proximity-geofencing-system_alert_window)
+   - 12.2 [Offline Hazard Cache Manager & Monitored Hazard Categories](#122-offline-hazard-cache-manager--monitored-hazard-categories)
+   - 12.3 [Home Screen Nearby Hazard Radar Card](#123-home-screen-nearby-hazard-radar-card)
+   - 12.4 [Autonomous Route Safety Agent (Rule-Based & Pluggable AI Contract)](#124-autonomous-route-safety-agent-rule-based--pluggable-ai-contract)
+   - 12.5 [OSRM Driving Route Engine & Offline Interpolation Fallback](#125-osrm-driving-route-engine--offline-interpolation-fallback)
+   - 12.6 [Dual-Category Risk Classification: Avoided vs. Unavoidable Hazards](#126-dual-category-risk-classification-avoided-vs-unavoidable-hazards)
+   - 12.7 [In-App Visual Route Preview & Google Maps Navigation Handoff](#127-in-app-visual-route-preview--google-maps-navigation-handoff)
 
 ---
 
@@ -513,30 +521,39 @@ frontend/src/
 
 ```
 com.example.zerogrid/
-├── admin/                         # Admin module
-│   ├── AdminPanelScreen.kt        # Primary admin interface with tabs (Map, History, Users)
-│   ├── data/                      # Admin Retrofit APIs, Repositories, Socket.IO Manager
-│   └── ui/                        # Map View, Tactical Radar, Incident Cards & Bottom Sheets
+├── admin/                         # Admin module (Map, History, User Management)
 ├── auth/                          # Login, Register, Profile Completion screens
 ├── contacts/                      # Emergency contacts screen & ViewModel
 ├── debug/                         # In-memory logging ring buffer & console viewer
-├── emergency/                     # SOS creation, dispatcher & WorkManager worker
+├── emergency/                     # SOS beacons, System Alert Overlay, Safety Agent & Safe Route Planner
+│   ├── HazardOverlayView.kt       # Full-screen system alert window with vehicle risk & detour
+│   ├── OverlayAlertManager.kt     # SYSTEM_ALERT_WINDOW manager & ringtone/vibrator controller
+│   ├── RouteSafetyAgent.kt        # Rule-based safety agent & corridor risk evaluator
+│   ├── SafeRoutePlannerDialog.kt  # Destination search & safe route execution modal
+│   ├── SendSosScreen.kt           # SOS trigger UI
+│   ├── SosCenterScreen.kt         # Live emergency incident feed
+│   ├── SosUploadWorker.kt         # WorkManager offline queue worker
+│   └── UnifiedSosDispatcher.kt    # Dual mesh/cloud broadcast dispatcher
 ├── family/                        # Family links screen & ViewModel
 ├── hardware/                      # BLE / Wi-Fi hardware state monitor & banner
-├── home/                          # Main mesh dashboard
-├── location/                      # Fused location provider wrapper
-├── mesh/
-│   ├── engine/                    # MeshEngine, MeshRoutingEngine, DeduplicationCache, Packet models
-│   └── transport/                 # BleMeshDriver, WifiDirectMeshDriver
+├── home/                          # MeshDashboardScreen with Nearby Hazards Radar Card
+├── location/                      # Geolocation & Proximity services
+│   ├── HazardCacheManager.kt      # In-memory & DataStore 10km hazard cache manager
+│   ├── HazardProximityMonitor.kt  # 60s background proximity geofence monitor
+│   ├── LocationHelper.kt          # Multi-provider GPS provider with Samsung FLP optimizations
+│   ├── LocationSearchHelper.kt    # Unified geocoder & OpenStreetMap destination search
+│   └── VehicleRiskCalculator.kt   # Vehicle clearance vs flood depth matrix
+├── mesh/                          # Mesh routing engine, packets, BLE & Wi-Fi Direct drivers
 ├── messaging/                     # 1:1 direct chat, channel broadcast chat & MessageStore
 ├── navigation/                    # NavGraph, Routes, Bottom Navigation bar
-├── network/                       # Retrofit client, interceptors, auth repositories
+├── network/                       # Retrofit client, SosApiService, OsrmRoutingService
 ├── onboarding/                    # Splash, Permissions, Create Identity screens
 ├── profile/                       # Profile management screen
-├── service/                       # MeshForegroundService & FCM Message Service
+├── service/                       # MeshForegroundService (Type: Location) & FCM Listener
 ├── settings/                      # Settings & security preferences
-├── ui/                            # Design system, themes & shared top bars
-└── util/                          # Validation helpers
+├── ui/                            # Design system, themes & shared components
+│   └── components/                # ProximityWarningBanner, NearbyHazardsRadarCard, SafeRoutePreviewMap
+└── util/                          # MapsIntentBuilder & validation helpers
 ```
 
 ### 7.3 Navigation System & Custom Pager Stack
@@ -565,6 +582,12 @@ The application employs a custom high-performance navigation architecture:
   2. Evaluates Internet availability via `ConnectivityChecker`. If online, immediately invokes `SosApiService.triggerSos()`. If offline, enqueues `SosUploadWorker` in WorkManager.
 - **`SosUploadWorker.kt`**: Executes in the background with `BackoffPolicy.EXPONENTIAL`. Retries cloud upload automatically upon network reconnection.
 
+#### Proactive Hazard Intelligence & Autonomous Safety Agent
+- **`HazardProximityMonitor.kt` & `HazardCacheManager.kt`**: Operates a zero-network 60-second background geofence evaluation against active local hazards (waterlogging, power lines, structural failures) within 10 km.
+- **`OverlayAlertManager.kt` & `HazardOverlayView.kt`**: Spawns a high-priority `SYSTEM_ALERT_WINDOW` over any application or lockscreen whenever a user enters the 200m danger buffer of a verified hazard.
+- **`RouteSafetyAgent.kt` & `OsrmRoutingService.kt`**: Evaluates travel corridors against infected hazard zones in the local database, generates orthogonal evasion waypoints, queries OSRM driving geometry, and classifies route impact into **Avoided** vs. **Unavoidable** hazards.
+- **`SafeRoutePreviewMap.kt`**: Renders an in-app interactive Google Map preview with polylines, danger circles, and evasion waypoints before triggering turn-by-turn navigation in Google Maps via `MapsIntentBuilder.kt`.
+
 #### Mobile Admin Panel & Tactical Radar / Google Maps
 - **Access Gate**: Admin Panel button in `SettingsScreen` is conditionally displayed only when `AuthRepository.userRole == "ADMIN"` and `adminApproved == true`.
 - **`AdminGoogleMapView.kt`**: Seamlessly switches between:
@@ -577,7 +600,7 @@ The application employs a custom high-performance navigation architecture:
 - **`EmergencyContactsScreen.kt` & `FamilyLinksScreen.kt`**: Integrates with backend endpoints to manage emergency contacts and track child locations.
 
 #### Background Services
-- **`MeshForegroundService.kt`**: Operates as a persistent foreground service with low battery overhead, keeping BLE advertising and scanning active while the app is in the background.
+- **`MeshForegroundService.kt`**: Operates as a persistent foreground service with `FOREGROUND_SERVICE_TYPE_LOCATION`, maintaining BLE discovery and location monitoring while the device is locked or minimized.
 - **`ZeroGridFirebaseMessagingService.kt`**: Captures high-priority FCM emergency pushes, instantiating high-priority system alert notifications.
 
 ---
@@ -726,3 +749,144 @@ SendSosScreen.kt
 | **Offline SOS double-upload** | Both `UnifiedSosDispatcher` and `SosUploadWorker` executing simultaneously upon rapid network re-association. | Guarded with state check and idempotency token. |
 | **Google Maps blank on Android** | Missing or unauthorized Maps API Key in Google Cloud Console. | Verify `MAPS_API_KEY` in `local.properties` has `Maps SDK for Android` enabled. |
 | **Android BLE Advertising fails (`ADVERTISE_FAILED_FEATURE_UNSUPPORTED`)** | Android Emulator lacks hardware BLE peripheral mode. | Run on physical Android device for mesh advertising and scanning testing. |
+| **Samsung FLP listener failure (`10416_FINE_fg_svc_false_foreground`)** | Android 14+ requires foreground services accessing location to declare `android:foregroundServiceType="location"`. | Declared `FOREGROUND_SERVICE_LOCATION` in manifest and passed `FOREGROUND_SERVICE_TYPE_LOCATION` in `MeshForegroundService.startForeground()`. |
+| **Overlay text keyboard inaccessible** | `WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE` prevented soft keyboard input in system alert overlay. | Removed `FLAG_NOT_FOCUSABLE` and set `softInputMode = SOFT_INPUT_ADJUST_RESIZE` in `OverlayAlertManager.kt`. |
+| **Background location stall on Samsung devices** | Samsung power management suspends standard network/fused listeners when app is minimized. | Polled `LocationManager.PASSIVE_PROVIDER` alongside `FUSED_PROVIDER` and `getCurrentLocation()` for API 30+ in `LocationHelper.kt`. |
+
+---
+
+## 12. Proactive Hazard Intelligence & Autonomous Safe Route Engine
+
+ZeroGrid integrates a proactive disaster intelligence pipeline that warns users of impending localized hazards (waterlogging, live electrical wire drops, fallen trees, structural collapses) before they enter danger zones, and orchestrates safety-verified evacuation routes using Open Source Routing Machine (OSRM) and an autonomous safety agent.
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                        TWO COMPANION ENTRY POINTS (SAME PIPELINE)                      │
+│                                                                                        │
+│   [A] Home Dashboard: "Hazard Radar"          [B] Proactive Geofence System Alert      │
+│       - Active hazards within 10 km               - 60s background monitor loop        │
+│       - "Plan Safe Route with Agent" button       - Triggers within 200m of hazard     │
+└───────────────────────────────────────────┬────────────────────────────────────────────┘
+                                            │
+                                            ▼
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ 1. REAL-TIME COORDINATE ACQUISITION                                                    │
+│    • Origin: Verified GPS coordinates via LocationHelper.kt                            │
+│    • Destination: LocationSearchHelper.kt (Geocoder + OSM Nominatim) OR Map Pin Tap    │
+└───────────────────────────────────────────┬────────────────────────────────────────────┘
+                                            │
+                                            ▼
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ 2. AUTONOMOUS ROUTE SAFETY AGENT (RouteSafetyAgent.kt + OsrmRoutingService.kt)         │
+│    • Ingests active hazards from HazardCacheManager.kt (Local DB & DataStore)          │
+│    • Performs spatial corridor collision check (cross-track distance < 160m)           │
+│    • Computes orthogonal evasion waypoints (+350m offset around hazard centers)        │
+│    • Queries OSRM for driving polyline; falls back to piecewise geodesic interpolation │
+│    • Dual-Category Risk Classification:                                                │
+│      ├─ 🛡 HAZARDS AVOIDED BY GRIDZERO (successfully bypassed by detour)               │
+│      └─ ⚠️ UNAVOIDABLE CONDITIONS TO FACE ANYWAY (residual hazards + survival tips)    │
+└───────────────────────────────────────────┬────────────────────────────────────────────┘
+                                            │
+                                            ▼
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ 3. IN-APP INTERACTIVE ROUTE PREVIEW (SafeRoutePreviewMap.kt)                           │
+│    • Embedded GoogleMap showing Origin (🟢), Destination (🏁), Route Polyline (🔵)    │
+│    • Danger Circles (🔴/🟢 100-150m) around hazard centers + Detour Waypoints (🟡)     │
+│    • Metrics Bar: Distance (km) and Travel Time (mins)                                 │
+│    • Dual breakdown cards (Avoided vs. Unavoidable Hazards)                            │
+└───────────────────────────────────────────┬────────────────────────────────────────────┘
+                                            │
+                                            ▼
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ 4. GOOGLE MAPS NAVIGATION HANDOFF (MapsIntentBuilder.kt)                               │
+│    • [ 🗺 Open in Google Maps Navigation ] button deep-links to Google Maps with       │
+│      evasion waypoints pre-encoded, enforcing safe navigation along the verified path  │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 12.1 System Alert Overlay & Proximity Geofencing (`SYSTEM_ALERT_WINDOW`)
+
+- **`HazardProximityMonitor.kt`**: Operates a lightweight coroutine loop tied to `MeshForegroundService.kt` that wakes every 60 seconds. Reads the user's last-known location and queries `HazardCacheManager.getCachedHazards()`. Generates **zero network calls** and **zero battery wake-locks** during routine ticks.
+- **`OverlayAlertManager.kt`**: When distance $\le 200\text{ m}$ to any active hazard, it inflates `HazardOverlayView.kt` via `WindowManager.addView()` as `TYPE_APPLICATION_OVERLAY`. Plays an emergency alert ringtone with a distinct vibration pattern (`0, 400, 200, 400, 800`).
+- **Interactive Multi-Step Overlay Flow**:
+  1. **`WARNING`**: Displays hazard type, water depth, and distance with dismiss `✕` button.
+  2. **`VEHICLE_SELECT`**: Prompts user for vehicle type (Sedan, Hatchback, SUV, 4x4, Motorcycle, Walking).
+  3. **`RISK_RESULT`**: Evaluates vehicle clearance against water depth via `VehicleRiskCalculator.kt` (SAFE, CAUTION, HIGH RISK, IMPASSABLE).
+  4. **`DEST_INPUT`**: Interactive destination search with autocomplete and tap-to-pin Google Map.
+  5. **`FETCHING_ROUTE`**: Safety Agent runs corridor analysis and OSRM routing.
+  6. **`ROUTE_READY`**: Renders full in-app route map preview with avoided vs. unavoidable hazard breakdown.
+
+### 12.2 Offline Hazard Cache Manager & Monitored Hazard Categories
+
+- **`HazardCacheManager.kt`**: Implements a hybrid memory + AndroidX DataStore cache of verified hazard SOS events within 10 km.
+- **Monitored Hazard Categories**:
+  - `WATERLOGGING` / `DRAINAGE_OVERFLOW` (with recorded water depth in cm)
+  - `SUBMERGED_UNDERPASS`
+  - `FALLEN_POWERLINE` / `LIVE_WIRE`
+  - `POWER_OUTAGE` (Blackout zones)
+  - `FALLEN_TREE`
+  - `STRUCTURAL_COLLAPSE` (Building and debris collapse)
+  - `ROAD_BLOCKAGE`
+- **Cache Refresh Triggers**:
+  1. Network connectivity restored (`ConnectivityChecker` callback).
+  2. Every 5 minutes while online.
+  3. When user drifts $> 1\text{ km}$ from the last fetch origin (re-centers the 10 km window).
+
+### 12.3 Home Screen Nearby Hazard Radar Card
+
+- **`NearbyHazardsRadarCard.kt`**: Embedded prominently on `MeshDashboardScreen.kt`.
+- **Features**:
+  - Displays total active hazard count in the 10 km radius.
+  - Lists the 3 closest hazards sorted by proximity with category icons (`⚡`, `🌊`, `🌲`, `🛑`), distance badges (`180m away`, `1.2km away`), and risk levels (`CRITICAL`, `HIGH`, `CAUTION`).
+  - Empty state when clear: `🛡 Area Safe — 0 Active Hazards in 10 km`.
+  - Prompts users with a direct CTA: `🧭 Plan Safe Route with Agent →`.
+
+### 12.4 Autonomous Route Safety Agent (Rule-Based & Pluggable AI Contract)
+
+- **`RouteSafetyAgent.kt`**: Implements a clean, decoupled interface designed for immediate deterministic execution and seamless future migration to conversational LLM / AI agents:
+  ```kotlin
+  interface RouteSafetyAgent {
+      suspend fun executeSafeRoute(
+          origin: LatLng,
+          destination: LatLng,
+          cachedHazards: List<CachedHazard>
+      ): RouteSafetyReport
+  }
+  ```
+- **`RuleBasedRouteSafetyAgent` Implementation**:
+  1. **Corridor Intersection**: Computes minimum distance from every cached hazard to the direct segment connecting Origin and Destination. Hazards within 160 meters are flagged as conflicting.
+  2. **Evasion Waypoint Generation**: For top-priority conflicting hazards, computes detour coordinates shifted orthogonally ($\pm 90^\circ$ relative to the travel bearing) by 350 meters around the hazard perimeter.
+  3. **OSRM Route Execution**: Queries OSRM with `[Origin, Waypoint_1, ..., Destination]`.
+  4. **Post-Route Classification**: Categorizes every local hazard into Avoided or Unavoidable lists based on the final polyline distance.
+
+### 12.5 OSRM Driving Route Engine & Offline Interpolation Fallback
+
+- **`OsrmRoutingService.kt`**: Executes driving routes against OSRM (`/route/v1/driving/{coords}?overview=full&geometries=geojson`).
+- Parses GeoJSON LineString coordinates into `List<LatLng>`, extracting total distance (meters) and duration (seconds).
+- **Offline Interpolation Fallback**: If offline or OSRM is unreachable, generates smooth piecewise geodesic interpolation points between checkpoints, ensuring navigation preview never fails.
+
+### 12.6 Dual-Category Risk Classification: Avoided vs. Unavoidable Hazards
+
+The Safety Agent produces two distinct, actionable lists presented to the user:
+1. 🛡 **Hazards Avoided Using GridZero:**
+   - Hazards that were in the original direct travel corridor but were successfully circumvented by the calculated detour.
+   - Example: *`⚡ Live Power Cable Drop — Circumvented by +420m via detour corridor`*
+   - Example: *`🌊 Waterlogging (45 cm) — Bypassed via flyover route`*
+2. ⚠️ **Unavoidable Conditions to Face Anyway:**
+   - Residual hazards that remain near the safe route (e.g., at user's starting point, near the destination gate, or narrow choke points).
+   - Generates tactical survival guidance based on hazard type and severity.
+   - Example: *`🌊 Waterlogging (15 cm) — Moderate pooling within 80m. Keep speed under 20 km/h in low gear.`*
+   - Example: *`⚡ Live Power Cable Drop — High voltage risk within 90m. Do NOT step out of vehicle.`*
+
+### 12.7 In-App Visual Route Preview & Google Maps Navigation Handoff
+
+- **`SafeRoutePreviewMap.kt`**: Shared Compose component utilized by both the Emergency Overlay and Home Safe Route Planner.
+- Renders an interactive `GoogleMap` directly on-screen before launching external apps:
+  - 🟢 **Origin Pin** (You)
+  - 🏁 **Destination Pin**
+  - 🔵 **Safe Route Polyline** (OSRM path)
+  - 🔴/🟢 **Danger Circles** (100m–120m circular hazard buffers)
+  - 🟡 **Evasion Waypoint Pins**
+- Below the map: Metrics bar (distance in km, duration in mins), Agent reasoning summary, and cards for Avoided and Unavoidable hazards.
+- **`MapsIntentBuilder.kt`**: Launches the Google Maps application with intermediate waypoints (`&waypoints=lat1,lng1|lat2,lng2`), forcing Google Maps turn-by-turn navigation to follow GridZero's safe detour corridor.
+
