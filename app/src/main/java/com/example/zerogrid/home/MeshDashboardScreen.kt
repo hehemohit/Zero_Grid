@@ -25,11 +25,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.zerogrid.emergency.SafeRoutePlannerDialog
+import com.example.zerogrid.location.HazardCacheManager
+import com.example.zerogrid.location.NearbyHazardInfo
 import com.example.zerogrid.location.LocationHelper
 import com.example.zerogrid.mesh.engine.MeshChannelMode
 import com.example.zerogrid.mesh.engine.MeshEngine
 import com.example.zerogrid.mesh.engine.MeshNode
 import com.example.zerogrid.navigation.Screen
+import com.example.zerogrid.ui.components.NearbyHazardsRadarCard
 import com.example.zerogrid.ui.components.ProximityWarningBanner
 import com.example.zerogrid.ui.components.ZeroGridTopBar
 import com.example.zerogrid.ui.theme.BadgeGreen
@@ -52,13 +56,18 @@ fun MeshDashboardScreen(
     }
     val colors = ZeroGridTheme.colors
 
-    // Periodically update user location for real-time proximity alerts
+    var showSafeRouteDialog by remember { mutableStateOf(false) }
+    var nearbyHazards by remember { mutableStateOf<List<NearbyHazardInfo>>(emptyList()) }
+
+    // Periodically update user location and nearby hazard cache
     LaunchedEffect(Unit) {
+        HazardCacheManager.loadFromDisk(context)
         while (true) {
             try {
-                val loc = LocationHelper.getCurrentLocation(context)
+                val loc = LocationHelper.getCurrentLocation(context) ?: LocationHelper.getLastKnownLocation(context)
                 if (loc != null) {
                     meshEngine.updateUserLocation(loc.lat, loc.lng)
+                    nearbyHazards = HazardCacheManager.getNearbyHazards(loc.lat, loc.lng, 10_000f)
                 }
             } catch (_: Exception) {}
             kotlinx.coroutines.delay(10_000L)
@@ -111,6 +120,20 @@ fun MeshDashboardScreen(
                                 .padding(bottom = 12.dp)
                         ) {
                             ProximityWarningBanner(warning = proximityWarning)
+                        }
+                    }
+
+                    item(key = "hazard_radar_card") {
+                        Box(
+                            modifier = Modifier
+                                .widthIn(max = 840.dp)
+                                .fillMaxWidth()
+                                .padding(bottom = 12.dp)
+                        ) {
+                            NearbyHazardsRadarCard(
+                                nearbyHazards = nearbyHazards,
+                                onPlanSafeRouteClick = { showSafeRouteDialog = true }
+                            )
                         }
                     }
 
@@ -171,6 +194,12 @@ fun MeshDashboardScreen(
                 }
             }
         }
+    }
+
+    if (showSafeRouteDialog) {
+        SafeRoutePlannerDialog(
+            onDismiss = { showSafeRouteDialog = false }
+        )
     }
 }
 

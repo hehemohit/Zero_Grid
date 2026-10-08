@@ -35,8 +35,16 @@ object HazardCacheManager {
     private val CACHE_KEY = stringPreferencesKey("hazard_json")
     private val gson = Gson()
 
-    private val FLOOD_CATEGORIES = setOf(
-        "WATERLOGGING", "SUBMERGED_UNDERPASS", "DRAINAGE_OVERFLOW"
+    val MONITORED_CATEGORIES = setOf(
+        "WATERLOGGING",
+        "SUBMERGED_UNDERPASS",
+        "DRAINAGE_OVERFLOW",
+        "FALLEN_POWERLINE",
+        "POWER_OUTAGE",
+        "LIVE_WIRE",
+        "FALLEN_TREE",
+        "STRUCTURAL_COLLAPSE",
+        "ROAD_BLOCKAGE"
     )
 
     // ── In-memory store (AtomicReference → thread-safe, zero-lock read) ──────
@@ -105,7 +113,7 @@ object HazardCacheManager {
             }
             val body = response.body() ?: return
             val filtered = body.events
-                .filter { it.category in FLOOD_CATEGORIES }
+                .filter { it.category in MONITORED_CATEGORIES || (it.waterDepthCm ?: 0) > 0 }
                 .mapNotNull { dto ->
                     val coords = dto.location?.coordinates ?: return@mapNotNull null
                     if (coords.size < 2) return@mapNotNull null
@@ -125,7 +133,7 @@ object HazardCacheManager {
             lastFetchLat = userLat
             lastFetchLng = userLng
 
-            Log.d(TAG, "Cache refreshed: ${filtered.size} flood hazards in 10 km radius.")
+            Log.d(TAG, "Cache refreshed: ${filtered.size} hazards in 10 km radius.")
 
             // Persist to DataStore for offline resilience
             val json = gson.toJson(filtered)
@@ -139,9 +147,56 @@ object HazardCacheManager {
     /** True if the cache is old enough to warrant a background refresh. */
     fun isStaleTtl(): Boolean = cacheAgeMs() > CACHE_TTL_MS
 
+    /**
+     * Returns cached hazards within [maxRadiusMeters] of ([userLat], [userLng]),
+     * sorted closest-first with hazard title, emoji icon, and risk level.
+     */
+    fun getNearbyHazards(
+        userLat: Double,
+        userLng: Double,
+        maxRadiusMeters: Float = 10_000f
+    ): List<NearbyHazardInfo> {
+        val hazards = getCachedHazards()
+        return hazards.mapNotNull { h ->
+            val dist = haversineMeters(userLat, userLng, h.lat, h.lng)
+            if (dist <= maxRadiusMeters) {
+                val (title, icon, severity) = categorizeHazard(h)
+                NearbyHazardInfo(
+                    hazard = h,
+                    distanceMeters = dist,
+                    title = title,
+                    iconEmoji = icon,
+                    riskSeverity = severity
+                )
+            } else null
+        }.sortedBy { it.distanceMeters }
+    }
+
+    private fun categorizeHazard(h: CachedHazard): Triple<String, String, String> {
+        return when (h.category.uppercase()) {
+            "FALLEN_POWERLINE", "LIVE_WIRE" -> Triple("Live Power Cable Drop", "⚡", "CRITICAL")
+            "POWER_OUTAGE" -> Triple("Grid Blackout Zone", "🔌", "MODERATE")
+            "FALLEN_TREE" -> Triple("Fallen Tree Obstruction", "🌲", "HIGH")
+            "STRUCTURAL_COLLAPSE" -> Triple("Structural Debris / Collapse", "🏚", "CRITICAL")
+            "ROAD_BLOCKAGE" -> Triple("Road Impassable", "🛑", "HIGH")
+            "SUBMERGED_UNDERPASS" -> Triple("Submerged Underpass", "🌊", if (h.waterDepthCm >= 30) "CRITICAL" else "HIGH")
+            "WATERLOGGING", "DRAINAGE_OVERFLOW" -> {
+                val label = if (h.waterDepthCm > 0) "Waterlogging (${h.waterDepthCm} cm)" else "Severe Waterlogging"
+                Triple(label, "🌊", if (h.waterDepthCm >= 35) "CRITICAL" else if (h.waterDepthCm >= 20) "HIGH" else "CAUTION")
+            }
+            else -> {
+                if (h.waterDepthCm > 0) {
+                    Triple("Waterlogging (${h.waterDepthCm} cm)", "🌊", if (h.waterDepthCm >= 30) "CRITICAL" else "HIGH")
+                } else {
+                    Triple("Active Incident Area", "⚠️", "MODERATE")
+                }
+            }
+        }
+    }
+
     // ── Haversine helper ───────────────────────────────────────────────────────
 
-    private fun haversineMeters(
+    fun haversineMeters(
         lat1: Double, lng1: Double,
         lat2: Double, lng2: Double
     ): Float {
@@ -158,7 +213,7 @@ object HazardCacheManager {
 }
 
 // ---------------------------------------------------------------------------
-// Data model
+// Data models
 // ---------------------------------------------------------------------------
 
 /**
@@ -173,4 +228,15 @@ data class CachedHazard(
     val passability: String,
     val category: String,
     val fetchedAtMs: Long
+)
+
+/**
+ * Enriched nearby hazard view-model with distance and UI formatting.
+ */
+data class NearbyHazardInfo(
+    val hazard: CachedHazard,
+    val distanceMeters: Float,
+    val title: String,
+    val iconEmoji: String,
+    val riskSeverity: String
 )

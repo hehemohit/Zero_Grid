@@ -78,6 +78,10 @@ import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
+import com.example.zerogrid.location.HazardCacheManager
+import com.example.zerogrid.location.LocationSearchHelper
+import com.example.zerogrid.location.LocationSearchResult
+import com.example.zerogrid.ui.components.SafeRoutePreviewMap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -112,6 +116,8 @@ fun HazardOverlayContent(
     var detourSummary   by remember { mutableStateOf("") }
     var detourDestLat   by remember { mutableStateOf(0.0) }
     var detourDestLng   by remember { mutableStateOf(0.0) }
+    var routeSafetyReport by remember { mutableStateOf<RouteSafetyReport?>(null) }
+    var targetDestinationTitle by remember { mutableStateOf("") }
     val scope           = rememberCoroutineScope()
     val context         = LocalContext.current
     val scrollState     = rememberScrollState()
@@ -206,28 +212,20 @@ fun HazardOverlayContent(
                     onFetchRoute = { lat, lng, destinationTitle ->
                         detourDestLat = lat
                         detourDestLng = lng
+                        targetDestinationTitle = destinationTitle
                         step = OverlayStep.FETCHING_ROUTE
                         scope.launch {
                             try {
-                                val resp = RetrofitInstance.sosApi.requestDetour(
-                                    DetourRequest(
-                                        originLat = alert.hazardLat,
-                                        originLng = alert.hazardLng,
-                                        destLat   = detourDestLat,
-                                        destLng   = detourDestLng
-                                    )
+                                val report = RuleBasedRouteSafetyAgent.executeSafeRoute(
+                                    origin = LatLng(alert.hazardLat, alert.hazardLng),
+                                    destination = LatLng(lat, lng),
+                                    cachedHazards = HazardCacheManager.getCachedHazards()
                                 )
-                                if (resp.isSuccessful && resp.body() != null) {
-                                    val body = resp.body()!!
-                                    detourGeoJson = body.safeRouteGeoJson
-                                    detourSummary = body.warningMessage.ifBlank {
-                                        "Safe detour route avoiding ${body.avoidedHazardsCount} hazard(s) to $destinationTitle"
-                                    }
-                                } else {
-                                    detourSummary = "Direct route to $destinationTitle prepared."
-                                }
+                                routeSafetyReport = report
+                                detourGeoJson = report.geoJsonString
+                                detourSummary = report.agentSummary
                             } catch (e: Exception) {
-                                detourSummary = "Offline route to $destinationTitle ready."
+                                detourSummary = "Direct route to $destinationTitle prepared."
                             }
                             step = OverlayStep.ROUTE_READY
                         }
@@ -237,22 +235,32 @@ fun HazardOverlayContent(
                 // ── Step 5: Loading ───────────────────────────────────────────
                 OverlayStep.FETCHING_ROUTE -> FetchingStep()
 
-                // ── Step 6: Route ready ───────────────────────────────────────
-                OverlayStep.ROUTE_READY -> RouteReadyStep(
-                    summary = detourSummary,
-                    onOpen  = {
-                        MapsIntentBuilder.launch(
-                            context    = context,
-                            originLat  = alert.hazardLat,
-                            originLng  = alert.hazardLng,
-                            destLat    = detourDestLat,
-                            destLng    = detourDestLng,
-                            geoJson    = detourGeoJson
+                // ── Step 6: Route ready with In-App Visual Route Preview ───────
+                OverlayStep.ROUTE_READY -> {
+                    if (routeSafetyReport != null) {
+                        SafeRoutePreviewMap(
+                            report = routeSafetyReport!!,
+                            destinationTitle = targetDestinationTitle.ifBlank { "Destination" },
+                            onClose = onDismiss
                         )
-                        onDismiss()
-                    },
-                    onDismiss = onDismiss
-                )
+                    } else {
+                        RouteReadyStep(
+                            summary = detourSummary,
+                            onOpen  = {
+                                MapsIntentBuilder.launch(
+                                    context    = context,
+                                    originLat  = alert.hazardLat,
+                                    originLng  = alert.hazardLng,
+                                    destLat    = detourDestLat,
+                                    destLng    = detourDestLng,
+                                    geoJson    = detourGeoJson
+                                )
+                                onDismiss()
+                            },
+                            onDismiss = onDismiss
+                        )
+                    }
+                }
             }
         }
     }
@@ -430,15 +438,6 @@ private fun RiskResultStep(
     }
 }
 
-// ── Search result model ───────────────────────────────────────────────────────
-
-data class LocationSearchResult(
-    val title: String,
-    val subtitle: String,
-    val lat: Double,
-    val lng: Double
-)
-
 @Composable
 private fun DestInputStep(
     alert: HazardAlert,
@@ -466,7 +465,7 @@ private fun DestInputStep(
         isSearching = true
         searchError = null
         scope.launch {
-            val list = searchLocations(context, trimmed)
+            val list = LocationSearchHelper.searchLocations(context, trimmed)
             isSearching = false
             if (list.isEmpty()) {
                 searchError = "No matching location found. Try city/neighborhood name or GPS."
@@ -802,108 +801,4 @@ private fun RouteReadyStep(
     ) {
         Text("Close")
     }
-}
-
-// ── Search & Geocoding Resolver ───────────────────────────────────────────────
-
-private val geocodeHttpClient by lazy {
-    okhttp3.OkHttpClient.Builder()
-        .connectTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
-        .readTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
-        .build()
-}
-
-/**
- * Searches places by name or coordinates using Android Geocoder and OpenStreetMap Nominatim fallback.
- */
-private suspend fun searchLocations(
-    context: Context,
-    query: String
-): List<LocationSearchResult> = withContext(Dispatchers.IO) {
-    val trimmed = query.trim()
-    if (trimmed.isBlank()) return@withContext emptyList()
-
-    val results = mutableListOf<LocationSearchResult>()
-
-    // 1. Direct lat,lng coordinate parse
-    val parts = trimmed.split(",")
-    if (parts.size == 2) {
-        val lat = parts[0].trim().toDoubleOrNull()
-        val lng = parts[1].trim().toDoubleOrNull()
-        if (lat != null && lng != null && lat in -90.0..90.0 && lng in -180.0..180.0) {
-            results.add(
-                LocationSearchResult(
-                    title = "GPS Coordinates",
-                    subtitle = String.format(java.util.Locale.US, "%.5f, %.5f", lat, lng),
-                    lat = lat,
-                    lng = lng
-                )
-            )
-            return@withContext results
-        }
-    }
-
-    // 2. Android native Geocoder (Google Maps backed on GMS devices)
-    try {
-        @Suppress("DEPRECATION")
-        val geoResults = Geocoder(context).getFromLocationName(trimmed, 5)
-        if (!geoResults.isNullOrEmpty()) {
-            for (g in geoResults) {
-                val title = g.featureName ?: g.locality ?: g.subAdminArea ?: trimmed
-                val subtitle = g.getAddressLine(0) ?: "$title, ${g.countryName ?: ""}"
-                results.add(
-                    LocationSearchResult(
-                        title = title,
-                        subtitle = subtitle,
-                        lat = g.latitude,
-                        lng = g.longitude
-                    )
-                )
-            }
-        }
-    } catch (e: Exception) {
-        Log.w("HazardOverlayView", "Native Geocoder failed: ${e.message}")
-    }
-
-    // 3. Fallback: OpenStreetMap Nominatim API via OkHttp
-    if (results.isEmpty()) {
-        try {
-            val encoded = java.net.URLEncoder.encode(trimmed, "UTF-8")
-            val url = "https://nominatim.openstreetmap.org/search?q=$encoded&format=json&limit=5&addressdetails=1"
-            val request = okhttp3.Request.Builder()
-                .url(url)
-                .header("User-Agent", "ZeroGrid-Android-Disaster-Mesh/1.0 (disaster-mesh@zerogrid.org)")
-                .build()
-
-            geocodeHttpClient.newCall(request).execute().use { response ->
-                if (response.isSuccessful) {
-                    val bodyString = response.body?.string().orEmpty()
-                    val jsonArray = JSONArray(bodyString)
-                    for (i in 0 until jsonArray.length()) {
-                        val obj = jsonArray.getJSONObject(i)
-                        val lat = obj.optDouble("lat", Double.NaN)
-                        val lon = obj.optDouble("lon", Double.NaN)
-                        val name = obj.optString("name", "").ifBlank {
-                            obj.optString("display_name", "").split(",").firstOrNull() ?: trimmed
-                        }
-                        val displayName = obj.optString("display_name", "")
-                        if (!lat.isNaN() && !lon.isNaN()) {
-                            results.add(
-                                LocationSearchResult(
-                                    title = name,
-                                    subtitle = displayName,
-                                    lat = lat,
-                                    lng = lon
-                                )
-                            )
-                        }
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            Log.w("HazardOverlayView", "Nominatim fallback failed: ${e.message}")
-        }
-    }
-
-    results
 }
