@@ -95,14 +95,18 @@ ZeroGrid is architected as a 4-tier hybrid distributed system designed to mainta
  TIER 4: CLIENT ACTION SURFACES
 ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════
 
-  [SURFACE A: ANDROID PROACTIVE DRIVER COPILOT]             [SURFACE B: AWS AMPLIFY MUNICIPAL CONSOLE]
-  • HazardProximityMonitor (60s tick, 0 network)            • Next.js 16 Web Dashboard on AWS Amplify
-  • SYSTEM_ALERT_WINDOW (<200m danger breach)               • Real-Time Google Maps / Tactical Canvas Layer
-  • SafeRoutePreviewMap:                                    • Socket.IO Live Telemetry Feed
-    - In-App GoogleMap Polyline Rendering                   • One-Click Strands Agent Crisis Briefing
-    - Danger Zones (100-150m circles)                       • Dispatcher Pump Truck & Barricade Directives
-    - 🛡 Avoided Hazards vs. ⚠️ Unavoidable Risks           • Multi-Agency Audit Trail & Incident Resolution
-  • Google Maps Navigation Handoff via Intent
+  [SURFACE A: ANDROID PROACTIVE DRIVER COPILOT & AI AGENT]   [SURFACE B: AWS AMPLIFY MUNICIPAL CONSOLE]
+  • HazardProximityMonitor (60s tick, 0 network)             • Next.js 16 Web Dashboard on AWS Amplify
+  • SYSTEM_ALERT_WINDOW (<200m danger breach)                • Real-Time Google Maps / Tactical Canvas Layer
+  • Safe Route Copilot (Conversational Agent Drawer):        • Socket.IO Live Telemetry Feed
+    - In-App GoogleMap Polyline + Evasion Buffers            • One-Click Strands Agent Crisis Briefing
+    - Dynamic Vehicle Matrix (Walk / 2W / Car / SUV)         • Dispatcher Pump Truck & Barricade Directives
+    - Live Nearby Places Autocomplete & Proximity Sorting    • Multi-Agency Audit Trail & Incident Resolution
+    - Responsive IME Soft Keyboard & Animated Collapse
+    - 🛡 Avoided Hazards vs. ⚠️ Unavoidable Risks
+  • Waypoints-Enforced Google Maps Navigation Intent:
+    - Injects intermediate evasion corridors (&waypoints=...)
+    - Prevents Google Maps from recalculating through floods
 ```
 
 ---
@@ -288,11 +292,31 @@ Renders directly inside Compose before launching third-party navigation apps:
   - `Marker(Destination)`: Finish flag pin.
   - `Circle(DangerZones)`: Red (`0x33FF5252`) and Green (`0x334CAF50`) translucent circular buffers (100–120m radius) around hazard coordinates.
   - `CameraPositionState`: Automatically computes `LatLngBounds` enclosing origin, destination, and all waypoints with 80dp padding.
-- **`MapsIntentBuilder.kt`**: Deep-links into the Google Maps app:
+- **`MapsIntentBuilder.kt`**: Deep-links into the Google Maps app with mandatory intermediate waypoint enforcement:
   ```
   https://www.google.com/maps/dir/?api=1&origin={lat},{lng}&destination={lat},{lng}&travelmode=driving&waypoints={wp1_lat},{wp1_lng}|{wp2_lat},{wp2_lng}
   ```
-  Forcing Google Maps navigation to follow the exact safety corridor verified by the agent.
+  Forcing Google Maps turn-by-turn navigation to strictly follow the hazard-evasion corridor without recalculating back through submerged streets.
+
+### 4.3 Permanent Conversational Safe Route Copilot (`SafeRouteCopilotScreen.kt`, `RouteCopilotViewModel.kt`)
+
+ZeroGrid incorporates a permanent, first-class conversational route copilot screen accessible across the application:
+1. **Interactive Dual-Panel Canvas**:
+   - **Top Google Map (Weight Animated)**: Renders live hazard circles, safe emerald polyline (`#10B981`), origin pin, destination pin, and floating stats HUD (Avoided hazards count, distance, ETA).
+   - **Bottom Agent Copilot Drawer**: Conversational chat interface displaying AI advice, why-this-detour explanations, and vehicle mode toggles.
+2. **Dynamic Vehicle Clearance Matrix**:
+   - 🚶 **Walking**: 15 cm max water depth
+   - 🛵 **2-Wheeler**: 20 cm max water depth
+   - 🚗 **Car / Auto**: 30 cm max water depth
+   - 🚙 **SUV / 4x4**: 50 cm max water depth
+   - Selecting any vehicle dynamically re-evaluates the corridor against cached hazards and updates the route polyline.
+3. **Live Proximity-Biased Autocomplete (`LocationSearchHelper.kt`)**:
+   - As the user types into the copilot prompt, debounced background queries (`260ms`) search native Geocoder (`±0.3°` bounding box) and OSM Nominatim.
+   - Computes Haversine distance in meters to the user's GPS fix and sorts closest places first with distance badges (e.g. `450 m`, `1.8 km`).
+   - Single-tap destination selection from the live recommendations card immediately plots safe routing.
+4. **Soft Keyboard Inset Management**:
+   - Uses `WindowInsets.ime` detection to animate the map weight from `1.05f` down to `0.35f` when the keyboard opens.
+   - Employs `Modifier.navigationBarsPadding().imePadding()` so the conversational drawer and text input box float cleanly above the keyboard without being obscured.
 
 ---
 
@@ -446,6 +470,8 @@ AndroidStudioProjects/
 │   │   │   │   ├── HazardOverlayView.kt    # Full-screen system alert window
 │   │   │   │   ├── OverlayAlertManager.kt  # SYSTEM_ALERT_WINDOW manager
 │   │   │   │   ├── RouteSafetyAgent.kt     # Rule-based safety agent & corridor evaluator
+│   │   │   │   ├── RouteCopilotViewModel.kt # Conversational Copilot & live search state
+│   │   │   │   ├── SafeRouteCopilotScreen.kt # Split-screen interactive map + chat copilot
 │   │   │   │   ├── SafeRoutePlannerDialog.kt # Safe route destination modal
 │   │   │   │   ├── SosCenterScreen.kt      # Emergency feed & beacon trigger
 │   │   │   │   └── UnifiedSosDispatcher.kt # Mesh + Cloud parallel dispatcher
@@ -454,14 +480,15 @@ AndroidStudioProjects/
 │   │   │   │   ├── HazardCacheManager.kt   # 10km offline DataStore hazard cache
 │   │   │   │   ├── HazardProximityMonitor.kt # 60s background geofence loop
 │   │   │   │   ├── LocationHelper.kt       # Multi-provider GPS (Samsung FLP compliant)
-│   │   │   │   ├── LocationSearchHelper.kt # Unified geocoding & OSM Nominatim search
+│   │   │   │   ├── LocationSearchHelper.kt # Unified proximity-biased geocoding & OSM search
 │   │   │   │   └── VehicleRiskCalculator.kt # Vehicle clearance vs water depth matrix
 │   │   │   ├── mesh/                       # MeshEngine, BLE & Wi-Fi Direct Drivers
 │   │   │   │   ├── engine/                 # RoutingEngine, Packet models, DeduplicationCache
 │   │   │   │   └── transport/              # BleMeshDriver, WifiDirectMeshDriver
 │   │   │   ├── network/                    # Retrofit APIs & OsrmRoutingService.kt
 │   │   │   ├── service/                    # MeshForegroundService (Type: Location)
-│   │   │   └── ui/components/              # NearbyHazardsRadarCard, SafeRoutePreviewMap
+│   │   │   ├── ui/components/              # NearbyHazardsRadarCard (Dynamic Theme), SafeRoutePreviewMap
+│   │   │   └── util/                       # MapsIntentBuilder.kt (Waypoint enforcement)
 │   │   └── AndroidManifest.xml             # Foreground service & overlay declarations
 │   └── build.gradle.kts                    # Android build script (SDK 35, Maps Compose)
 │
@@ -547,6 +574,8 @@ npm run dev
 | **Background location freeze on Samsung devices** | Aggressive vendor power management suspends standard fused listeners. | Implemented multi-provider polling (`PASSIVE_PROVIDER`, `FUSED_PROVIDER`, `getCurrentLocation()`) in `LocationHelper.kt`. |
 | **BLE advertising failure (`ADVERTISE_FAILED_FEATURE_UNSUPPORTED`)** | Android Emulator lacks hardware BLE peripheral mode. | Run on physical Android hardware for mesh radio verification. |
 | **High Logcat frame invalidation (`gralloc4`)** | Infinite layout animations recalculating every frame in top bars. | Replaced infinite transitions with static indicator chips. |
+| **Soft keyboard covering chat input & suggestions** | Default Compose Scaffold consumed insets without raising the bottom drawer above virtual keyboard. | Added `navigationBarsPadding().imePadding()`, set `Scaffold(contentWindowInsets = WindowInsets.statusBars)`, and animated map weight from `1.05f` down to `0.35f`. |
+| **Google Maps recalculating routes through flooded corridors** | Opening direct origin-destination intents caused Google Maps navigation to route along the shortest path (through flooded subways). | Built `MapsIntentBuilder.launchWithReport()` injecting up to 8 intermediate evasion waypoints into the intent URL (`&waypoints=...`). |
 
 ---
 
