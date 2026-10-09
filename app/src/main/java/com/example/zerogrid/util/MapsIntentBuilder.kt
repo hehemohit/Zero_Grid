@@ -40,23 +40,67 @@ object MapsIntentBuilder {
         val waypoints = geoJson?.let { extractWaypoints(it) } ?: emptyList()
         val url = buildUrl(originLat, originLng, destLat, destLng, waypoints)
         Log.d(TAG, "Opening Maps: $url")
+        openUri(context, Uri.parse(url))
+    }
 
-        val uri = Uri.parse(url)
+    /**
+     * Launches Google Maps enforcing all calculated evasion waypoints from a [RouteSafetyReport].
+     * Prevents Google Maps from ignoring flooded corridors and recomputing its own unsafe trajectory.
+     */
+    fun launchWithReport(
+        context: Context,
+        report: com.example.zerogrid.emergency.RouteSafetyReport,
+        travelMode: String = "driving"
+    ) {
+        val originLat = report.origin.latitude
+        val originLng = report.origin.longitude
+        val destLat = report.destination.latitude
+        val destLng = report.destination.longitude
 
-        // Prefer Google Maps app
+        // Prioritize explicit detour evasion checkpoints
+        val waypoints = if (report.waypoints.isNotEmpty()) {
+            report.waypoints.take(MAX_WAYPOINTS).map { Pair(it.latitude, it.longitude) }
+        } else if (report.geoJsonString != null) {
+            extractWaypoints(report.geoJsonString)
+        } else if (report.routePoints.size > 2) {
+            // Sample intermediate checkpoints along the safe corridor polyline
+            val intermediates = report.routePoints.subList(1, report.routePoints.size - 1)
+            if (intermediates.size <= MAX_WAYPOINTS) {
+                intermediates.map { Pair(it.latitude, it.longitude) }
+            } else {
+                val step = intermediates.size.toFloat() / MAX_WAYPOINTS
+                (0 until MAX_WAYPOINTS).map { i ->
+                    val pt = intermediates[(i * step).toInt()]
+                    Pair(pt.latitude, pt.longitude)
+                }
+            }
+        } else {
+            emptyList()
+        }
+
+        val url = buildUrl(originLat, originLng, destLat, destLng, waypoints, travelMode)
+        Log.d(TAG, "Opening Google Maps with ${waypoints.size} forced waypoints: $url")
+        openUri(context, Uri.parse(url))
+    }
+
+    private fun openUri(context: Context, uri: Uri) {
         val mapsIntent = Intent(Intent.ACTION_VIEW, uri).apply {
             setPackage(MAPS_PACKAGE)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
 
-        if (mapsIntent.resolveActivity(context.packageManager) != null) {
+        try {
             context.startActivity(mapsIntent)
-        } else {
-            // Fallback: browser
+        } catch (e: Exception) {
+            // Fallback: system browser
             val browserIntent = Intent(Intent.ACTION_VIEW, uri).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            context.startActivity(browserIntent)
+            try {
+                context.startActivity(browserIntent)
+            } catch (err: Exception) {
+                Log.e(TAG, "Failed to launch maps intent: ${err.message}")
+            }
         }
     }
 
@@ -65,13 +109,14 @@ object MapsIntentBuilder {
     private fun buildUrl(
         originLat: Double, originLng: Double,
         destLat: Double,   destLng: Double,
-        waypoints: List<Pair<Double, Double>>
+        waypoints: List<Pair<Double, Double>>,
+        travelMode: String = "driving"
     ): String {
         val sb = StringBuilder()
         sb.append("https://www.google.com/maps/dir/?api=1")
         sb.append("&origin=$originLat,$originLng")
         sb.append("&destination=$destLat,$destLng")
-        sb.append("&travelmode=driving")
+        sb.append("&travelmode=$travelMode")
 
         if (waypoints.isNotEmpty()) {
             val waypointStr = waypoints.joinToString("|") { (lat, lng) -> "$lat,$lng" }

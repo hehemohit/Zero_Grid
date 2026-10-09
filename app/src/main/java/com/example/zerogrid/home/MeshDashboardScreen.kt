@@ -132,7 +132,7 @@ fun MeshDashboardScreen(
                         ) {
                             NearbyHazardsRadarCard(
                                 nearbyHazards = nearbyHazards,
-                                onPlanSafeRouteClick = { showSafeRouteDialog = true }
+                                onPlanSafeRouteClick = { onNavigate(Screen.SAFE_ROUTE_COPILOT) }
                             )
                         }
                     }

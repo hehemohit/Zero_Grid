@@ -325,6 +325,10 @@ private fun RenderScreen(
             onLogout = onLogout
         )
         Screen.TRACK_SOS -> { /* handled in caller with full state */ }
+        Screen.SAFE_ROUTE_COPILOT -> SafeRouteCopilotScreen(
+            onBack = onBack,
+            onNavigate = onNavigate
+        )
     }
 }
 

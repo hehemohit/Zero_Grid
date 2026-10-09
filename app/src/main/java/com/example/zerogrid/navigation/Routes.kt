@@ -21,6 +21,7 @@ enum class Screen {
     EMERGENCY_CONTACTS,
     FAMILY_LINKS,
     PROFILE,
-    TRACK_SOS
+    TRACK_SOS,
+    SAFE_ROUTE_COPILOT
 }
 

@@ -101,7 +101,12 @@ fun SafeRoutePlannerDialog(
         isSearching = true
         searchError = null
         scope.launch {
-            val list = LocationSearchHelper.searchLocations(context, trimmed)
+            val list = LocationSearchHelper.searchLocations(
+                context = context,
+                query = trimmed,
+                userLat = userLocation?.latitude,
+                userLng = userLocation?.longitude
+            )
             isSearching = false
             if (list.isEmpty()) {
                 searchError = "No matching location found. Try landmark name or coordinates."
