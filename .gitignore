@@ -17,3 +17,20 @@ local.properties
 # Firebase credentials (local only)
 google-services.json
 app/google-services.json
+
+# Local Automation Scripts
+run_timed_commits.ps1
+
+# Node & Web Artifacts
+**/node_modules/
+**/.next/
+**/.env
+**/.env.local
+**/.env*.local
+**/dist/
+**/build/
+__pycache__/
+*.pyc
+.venv/
+env/
+run_timed_commits.ps1
