@@ -67,10 +67,17 @@ export default function LandingPage() {
     { time: '00:00:02', text: 'ElastiCache Redis cluster online. 160 NDRF rescuer pool registered in Atlas.', color: 'text-slate-500' },
   ]);
 
-  const logsEndRef = useRef<HTMLDivElement | null>(null);
+  const logsContainerRef = useRef<HTMLDivElement | null>(null);
+  const isInitialMount = useRef(true);
 
   useEffect(() => {
-    logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    if (logsContainerRef.current) {
+      logsContainerRef.current.scrollTop = logsContainerRef.current.scrollHeight;
+    }
   }, [logs]);
 
   const executeSimulation = () => {
@@ -1245,13 +1252,12 @@ export default function LandingPage() {
                   </div>
                   <span className="text-[10px] text-emerald-400">AWS CloudWatch Live Stream</span>
                 </div>
-                <div className="space-y-1.5 overflow-y-auto max-h-[280px] text-slate-300">
+                <div ref={logsContainerRef} className="space-y-1.5 overflow-y-auto max-h-[280px] text-slate-300">
                   {logs.map((lg, idx) => (
                     <div key={idx} className={lg.color}>
                       [{lg.time}] {lg.text}
                     </div>
                   ))}
-                  <div ref={logsEndRef} />
                 </div>
               </div>
               <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-[11px]">
