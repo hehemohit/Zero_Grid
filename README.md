@@ -1,12 +1,30 @@
-# ZeroGrid — Autonomous Emergency Response & Off-Grid Mesh Platform
+# ZeroGrid
 
-> 🏆 **Submission for Bharat Builds Hackathon — Environment Track: Heat & Water (Monsoon Floods & Grid Blackout)**  
-> **Zero-Infrastructure Disaster Coordination, Peer-to-Peer Off-Grid Mesh Alerting & Circular Multi-Agent Crisis Engine Native to AWS**  
-> Empowers citizens and first responders in submerged, blackout-stricken disaster zones (BLE / Wi-Fi Direct / 868MHz Mesh) while bridging into an enterprise AWS Cloud backend running **AgentZero** (powered by the **Strands Agents SDK**), **Amazon Bedrock**, **MongoDB Atlas (2dsphere)**, and **Amazon ElastiCache Redis**.
+### Autonomous Emergency Response & Off-Grid Mesh Platform
+
+[![Bharat Builds](https://img.shields.io/badge/Bharat%20Builds-Environment%20Track%202026-orange?style=flat&logo=target&logoColor=white)](https://github.com/hehemohit/Zero_Grid)
+[![Android](https://img.shields.io/badge/Android-Kotlin%20%7C%20Compose-3DDC84?style=flat&logo=android&logoColor=white)](https://github.com/hehemohit/Zero_Grid)
+[![Mesh](https://img.shields.io/badge/Mesh-BLE%20%26%20Wi--Fi%20Direct-0078D7?style=flat&logo=bluetooth&logoColor=white)](https://github.com/hehemohit/Zero_Grid)
+[![AWS](https://img.shields.io/badge/AWS-ECS%20Fargate-FF9900?style=flat&logo=amazon-aws&logoColor=white)](https://github.com/hehemohit/Zero_Grid)
+[![Amazon Bedrock](https://img.shields.io/badge/Amazon-Bedrock-7B2CBF?style=flat&logo=amazonaws&logoColor=white)](https://github.com/hehemohit/Zero_Grid)
+[![Strands Agents](https://img.shields.io/badge/Strands-Agents%20SDK-FF4F00?style=flat&logo=openai&logoColor=white)](https://github.com/hehemohit/Zero_Grid)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas%202dsphere-47A248?style=flat&logo=mongodb&logoColor=white)](https://github.com/hehemohit/Zero_Grid)
+[![ElastiCache](https://img.shields.io/badge/ElastiCache-Redis%20Redlock-DC382D?style=flat&logo=redis&logoColor=white)](https://github.com/hehemohit/Zero_Grid)
+[![Next.js](https://img.shields.io/badge/Next.js-16%20Amplify-black?style=flat&logo=nextdotjs&logoColor=white)](https://github.com/hehemohit/Zero_Grid)
+
+> Zero-infrastructure emergency coordination for catastrophic monsoon floods and power grid blackouts — saving lives when mobile networks collapse.
+
+ZeroGrid is a **hardware-first, agentic crisis response system**: Native Android P2P Radio Mesh + Dynamic Flood Route Copilot + Autonomous Multi-Agent Engine (**AgentZero** powered by **Strands Agents SDK** and **Amazon Bedrock**) — built to **ship on AWS**.
+
+**Architecture Blueprint**: [aws_architecture_final.jpg](file:///C:/Users/ACER/.gemini/antigravity-ide/brain/230e08d2-b887-4e64-9883-849acbcc94b7/aws_architecture_strands_1791639732883.jpg) · **Mobile Core**: [mobile application working core.md](file:///c:/Users/ACER/AndroidStudioProjects/gridzero/mobile%20application%20working%20core.md) · **Cloud Infrastructure**: [WebCloudFunction.md](file:///c:/Users/ACER/AndroidStudioProjects/gridzero/WebCloudFunction.md) · **Packet Wire Specs**: [packet_structure_diagrams.md](file:///c:/Users/ACER/AndroidStudioProjects/gridzero/gridZeroExpress/packet_structure_diagrams.md) · **RSSI Radar Tracking**: [rssiTracking.md](file:///c:/Users/ACER/AndroidStudioProjects/gridzero/rssiTracking.md)
 
 ---
 
 ## 🌊 Bharat Builds Hackathon Problem Statement & Impact
+
+> [!IMPORTANT]
+> **Bharat Builds Hackathon — Environment Track: Heat & Water (Monsoon Floods & Grid Blackout)**  
+> Enables resilient life-safety communication across submerged territories when power infrastructure and cellular telecommunications are incapacitated.
 
 During catastrophic monsoons and urban flood disasters (e.g., Mumbai, Chennai, Kerala floods):
 1. **Cellular Towers Submerge & Power Grids Fail**: Mobile networks collapse within 45 minutes of heavy inundation, cutting off trapped citizens from emergency services.
@@ -51,6 +69,53 @@ During catastrophic monsoons and urban flood disasters (e.g., Mumbai, Chennai, K
 ---
 
 ## 1. Full Technology Stack
+
+### 📱 Mobile Client (Native Android)
+[![Kotlin](https://img.shields.io/badge/Kotlin-1.9+-7F52FF?style=flat&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
+[![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?style=flat&logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
+[![Android](https://img.shields.io/badge/Target%20SDK-35%20(Android%208.0%2B)-3DDC84?style=flat&logo=android&logoColor=white)](https://developer.android.com/)
+[![BLE](https://img.shields.io/badge/Radio-BLE%205.0%20Peripheral%20%26%20Central-0078D7?style=flat&logo=bluetooth&logoColor=white)](https://developer.android.com/guide/topics/connectivity/bluetooth/ble-overview)
+[![Wi-Fi Direct](https://img.shields.io/badge/Wi--Fi-Direct%20P2P%20Sockets-1DA1F2?style=flat&logo=wi-fi&logoColor=white)](https://developer.android.com/guide/topics/connectivity/wifip2p)
+[![Google Maps](https://img.shields.io/badge/Maps-Google%20Maps%20Compose%204.4-4285F4?style=flat&logo=googlemaps&logoColor=white)](https://developers.google.com/maps)
+[![WorkManager](https://img.shields.io/badge/Offline-WorkManager%202.9-34A853?style=flat&logo=android&logoColor=white)](https://developer.android.com/topic/libraries/architecture/workmanager)
+[![Socket.IO](https://img.shields.io/badge/Realtime-Socket.IO%20Java%202.1-010101?style=flat&logo=socketdotio&logoColor=white)](https://socket.io/)
+
+* **Core Runtime**: Kotlin 1.9+, Coroutines & StateFlow / SharedFlow, AndroidX Lifecycle.
+* **Network & Ingress**: Retrofit 2.11 + OkHttp 4.12 (HTTP/2, TLS 1.3), Socket.IO Java Client 2.1.0 (`/sos` namespace).
+* **Hardware Drivers**: BLE Advertising (Peripheral Mode) & Scanning (Central GATT), Android `WifiP2pManager` Direct Groups, `SensorManager` Magnetometer Canvas Compass.
+
+### ⚙️ Core Backend Container (AWS ECS Fargate — `gridZeroExpress`)
+[![Node.js](https://img.shields.io/badge/Node.js-20%20LTS-339933?style=flat&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![Express](https://img.shields.io/badge/Express-5.2.1-000000?style=flat&logo=express&logoColor=white)](https://expressjs.com/)
+[![Strands Agents](https://img.shields.io/badge/Agents-AWS%20Strands%20SDK%201.19-FF4F00?style=flat&logo=openai&logoColor=white)](https://strandsagents.com/)
+[![MCP](https://img.shields.io/badge/Protocol-MCP%20SDK%201.32-6C5CE7?style=flat)](https://modelcontextprotocol.io/)
+[![MongoDB](https://img.shields.io/badge/Database-MongoDB%20Atlas%202dsphere-47A248?style=flat&logo=mongodb&logoColor=white)](https://mongodb.com/)
+[![Redis](https://img.shields.io/badge/Mutex-ioredis%206.0%20Redlock-DC382D?style=flat&logo=redis&logoColor=white)](https://redis.io/)
+[![Python](https://img.shields.io/badge/Voice%20Hook-Python%203.11%20FastAPI-3776AB?style=flat&logo=python&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Prometheus](https://img.shields.io/badge/Telemetry-Prometheus%20Client%2015.1-E6522C?style=flat&logo=prometheus&logoColor=white)](https://prometheus.io/)
+
+* **Agentic Loop**: AWS Strands Agents SDK (`@strands-agents/sdk` 1.19) driving **AgentZero** reasoning, tool dispatch, and crisis triage.
+* **Geospatial & Storage**: Mongoose 9.10 + MongoDB Node Driver 7.6 (`2dsphere` geospatial indexing), Distributed Redlock Mutex (`ioredis`).
+* **Microservices**: Python 3.11 + FastAPI + Mangum Serverless Adapter for voice intent classification.
+
+### ☁️ AWS Cloud Ingress & Serverless Infrastructure
+[![AWS ECS](https://img.shields.io/badge/Compute-AWS%20ECS%20Fargate-FF9900?style=flat&logo=amazonecs&logoColor=white)](https://aws.amazon.com/ecs/)
+[![API Gateway](https://img.shields.io/badge/Ingress-Amazon%20API%20Gateway-FF4F8B?style=flat&logo=amazonapigateway&logoColor=white)](https://aws.amazon.com/api-gateway/)
+[![Cognito](https://img.shields.io/badge/Auth-Amazon%20Cognito%20JWT-DD344C?style=flat&logo=amazoncognito&logoColor=white)](https://aws.amazon.com/cognito/)
+[![Secrets Manager](https://img.shields.io/badge/Security-AWS%20Secrets%20Manager-DD344C?style=flat&logo=amazonaws&logoColor=white)](https://aws.amazon.com/secrets-manager/)
+[![AWS Lambda](https://img.shields.io/badge/Serverless-AWS%20Lambda%20A1%20%26%20GenAI-FF9900?style=flat&logo=awslambda&logoColor=white)](https://aws.amazon.com/lambda/)
+[![Amazon Bedrock](https://img.shields.io/badge/AI-Amazon%20Bedrock%20Claude%203.5-7B2CBF?style=flat&logo=amazonaws&logoColor=white)](https://aws.amazon.com/bedrock/)
+[![DynamoDB](https://img.shields.io/badge/Grid%20Topology-Amazon%20DynamoDB-4053D6?style=flat&logo=amazondynamodb&logoColor=white)](https://aws.amazon.com/dynamodb/)
+[![ElastiCache](https://img.shields.io/badge/Cache-Amazon%20ElastiCache%20Redis-C925D1?style=flat&logo=redis&logoColor=white)](https://aws.amazon.com/elasticache/)
+[![Amplify](https://img.shields.io/badge/Hosting-AWS%20Amplify%20Edge%20CDN-FF9900?style=flat&logo=awsamplify&logoColor=white)](https://aws.amazon.com/amplify/)
+[![Location Service](https://img.shields.io/badge/Routing-Amazon%20Location%20Service%20v2-232F3E?style=flat&logo=amazonaws&logoColor=white)](https://aws.amazon.com/location/)
+
+### 💻 Web Operations Command Center (AWS Amplify)
+[![Next.js](https://img.shields.io/badge/Framework-Next.js%2016.3.5%20App%20Router-black?style=flat&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/UI-React%2019.2-61DAFB?style=flat&logo=react&logoColor=black)](https://react.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Styling-Tailwind%20CSS%20v4-38B2AC?style=flat&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![MapLibre](https://img.shields.io/badge/Mapping-MapLibre%20GL%204.7-396B9E?style=flat&logo=maplibre&logoColor=white)](https://maplibre.org/)
+[![Lucide](https://img.shields.io/badge/Icons-Lucide%20React-F56565?style=flat&logo=feather&logoColor=white)](https://lucide.dev/)
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
@@ -284,6 +349,12 @@ gridzero/ (Repository Workspace Root)
 
 ## 3. PART I: Mobile Application Working Core (`app/`)
 
+[![Android](https://img.shields.io/badge/Platform-Android%208.0%2B%20(API%2026--35)-3DDC84?style=flat&logo=android&logoColor=white)](https://github.com/hehemohit/Zero_Grid)
+[![Kotlin](https://img.shields.io/badge/Language-Kotlin%201.9-7F52FF?style=flat&logo=kotlin&logoColor=white)](https://github.com/hehemohit/Zero_Grid)
+[![Jetpack Compose](https://img.shields.io/badge/UI-Jetpack%20Compose%20(Material%203)-4285F4?style=flat&logo=jetpackcompose&logoColor=white)](https://github.com/hehemohit/Zero_Grid)
+[![BLE Mesh](https://img.shields.io/badge/Mesh-Bluetooth%205.0%20BLE-0078D7?style=flat&logo=bluetooth&logoColor=white)](https://github.com/hehemohit/Zero_Grid)
+[![Wi-Fi Direct](https://img.shields.io/badge/Mesh-Wi--Fi%20Direct%20P2P-1DA1F2?style=flat&logo=wi-fi&logoColor=white)](https://github.com/hehemohit/Zero_Grid)
+
 > 📘 **Detailed Architectural Deep-Dive**: For raw implementation code, see [mobile application working core.md](file:///c:/Users/ACER/AndroidStudioProjects/gridzero/mobile%20application%20working%20core.md).
 
 Built entirely in **Kotlin** and **Jetpack Compose (Material 3)**, targeting Android 8.0+ (API 26 to 35).
@@ -477,6 +548,13 @@ Dispatchers toggle between two specialized display modes:
 
 ## 4. PART II: AWS Cloud Infrastructure & Multi-Agent Backend
 
+[![AWS ECS](https://img.shields.io/badge/Compute-AWS%20ECS%20Fargate-FF9900?style=flat&logo=amazonecs&logoColor=white)](https://github.com/hehemohit/Zero_Grid)
+[![Strands Agents](https://img.shields.io/badge/Agentic-Strands%20Agents%20SDK-FF4F00?style=flat&logo=openai&logoColor=white)](https://github.com/hehemohit/Zero_Grid)
+[![Amazon Bedrock](https://img.shields.io/badge/AI%20Reasoning-Amazon%20Bedrock-7B2CBF?style=flat&logo=amazonaws&logoColor=white)](https://github.com/hehemohit/Zero_Grid)
+[![MongoDB](https://img.shields.io/badge/Database-MongoDB%20Atlas%202dsphere-47A248?style=flat&logo=mongodb&logoColor=white)](https://github.com/hehemohit/Zero_Grid)
+[![ElastiCache](https://img.shields.io/badge/Cache-ElastiCache%20Redis%20Redlock-DC382D?style=flat&logo=redis&logoColor=white)](https://github.com/hehemohit/Zero_Grid)
+[![DynamoDB](https://img.shields.io/badge/Topology-Amazon%20DynamoDB-4053D6?style=flat&logo=amazondynamodb&logoColor=white)](https://github.com/hehemohit/Zero_Grid)
+
 Once an SOS packet reaches an active internet uplink (cellular, Starlink, or Wi-Fi), it transitions from the physical mesh into the AWS Cloud Microservices platform.
 
 ---
@@ -651,6 +729,12 @@ flowchart TD
 ---
 
 ## 5. PART III: Web Operations Command Center (Amplify / Next.js 16)
+
+[![Next.js](https://img.shields.io/badge/Framework-Next.js%2016.3.5%20App%20Router-black?style=flat&logo=nextdotjs&logoColor=white)](https://github.com/hehemohit/Zero_Grid)
+[![React](https://img.shields.io/badge/UI-React%2019.2-61DAFB?style=flat&logo=react&logoColor=black)](https://github.com/hehemohit/Zero_Grid)
+[![Amplify](https://img.shields.io/badge/Hosting-AWS%20Amplify%20Edge%20CDN-FF9900?style=flat&logo=awsamplify&logoColor=white)](https://github.com/hehemohit/Zero_Grid)
+[![MapLibre](https://img.shields.io/badge/Mapping-MapLibre%20GL%204.7-396B9E?style=flat&logo=maplibre&logoColor=white)](https://github.com/hehemohit/Zero_Grid)
+[![Tailwind](https://img.shields.io/badge/CSS-Tailwind%20CSS%20v4-38B2AC?style=flat&logo=tailwindcss&logoColor=white)](https://github.com/hehemohit/Zero_Grid)
 
 The web dashboard is hosted on **AWS Amplify** with edge SSR/SSG:
 * **Live Operations Map (`SosLiveMap.tsx`)**: Powered by **Amazon Location Service v2** and **MapLibre GL**, displaying real-time incident pins and dynamic flood overlay polygons.
