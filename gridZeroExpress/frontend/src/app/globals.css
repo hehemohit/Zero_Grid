@@ -1,0 +1,153 @@
+@import "tailwindcss";
+
+@theme {
+  --color-canvas: #070B14;
+  --color-surface: #0F172A;
+  --color-surfaceElevated: #162035;
+  --color-surfaceCard: #11192C;
+  --color-hairline: #1E293B;
+  --color-hairlineBright: #29354E;
+  --color-primaryText: #F8FAFC;
+  --color-secondaryText: #CBD5E1;
+  --color-mutedGray: #94A3B8;
+  --color-dimGray: #64748B;
+  --color-brandTeal: #2DD4BF;
+  --color-brandTealGlow: #14B8A6;
+  --color-brandTealDark: #0B252E;
+  --color-brandTealLight: #132F38;
+  --color-alertRed: #EF4444;
+  --color-alertRedBg: rgba(239, 68, 68, 0.12);
+  --color-alertRedBorder: rgba(239, 68, 68, 0.35);
+  --color-alertRedGlow: rgba(239, 68, 68, 0.25);
+  --radius-16dp: 16px;
+  --shadow-glow-red: 0 0 16px -2px rgba(239, 68, 68, 0.35);
+  --shadow-glow-teal: 0 0 16px -2px rgba(45, 212, 191, 0.25);
+  --shadow-panel-dark: 0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(30, 41, 59, 0.8);
+}
+
+:root {
+  --red-primary: #ef4444;
+  --red-glow: rgba(239, 68, 68, 0.3);
+  --orange-accent: #f97316;
+}
+
+/* ── Light Theme Overrides ────────────────────────────────────────────────── */
+html.light {
+  --color-canvas: #F1F5F9;
+  --color-surface: #FFFFFF;
+  --color-surfaceElevated: #F8FAFC;
+  --color-surfaceCard: #FFFFFF;
+  --color-hairline: #E2E8F0;
+  --color-hairlineBright: #CBD5E1;
+  --color-primaryText: #0F172A;
+  --color-secondaryText: #334155;
+  --color-mutedGray: #64748B;
+  --color-dimGray: #94A3B8;
+  --color-brandTeal: #0D9488;
+  --color-brandTealGlow: #0F766E;
+  --color-brandTealDark: #CCFBF1;
+  --color-brandTealLight: #E0FDF4;
+  --color-alertRed: #DC2626;
+  --color-alertRedBg: rgba(220, 38, 38, 0.08);
+  --color-alertRedBorder: rgba(220, 38, 38, 0.3);
+  --color-alertRedGlow: rgba(220, 38, 38, 0.15);
+  --shadow-glow-red: 0 0 16px -2px rgba(220, 38, 38, 0.2);
+  --shadow-glow-teal: 0 0 16px -2px rgba(13, 148, 136, 0.2);
+  --shadow-panel-dark: 0 4px 24px -4px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(226, 232, 240, 0.8);
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar — dark */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #111827;
+}
+::-webkit-scrollbar-thumb {
+  background: #374151;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #4b5563;
+}
+
+/* Custom scrollbar — light */
+html.light ::-webkit-scrollbar-track {
+  background: #F1F5F9;
+}
+html.light ::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+}
+html.light ::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* Glow animation for SOS pulse */
+@keyframes sos-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 20px rgba(239, 68, 68, 0);
+  }
+}
+
+.sos-pulse {
+  animation: sos-pulse 2s infinite;
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #ef4444, #f97316, #eab308);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glassmorphism card — adapts to theme */
+.glass-card {
+  background: rgba(17, 24, 39, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+html.light .glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Shimmer loading skeleton */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #1f2937 25%, #374151 50%, #1f2937 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Fade-in animation */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fade-in 0.4s ease-out forwards;
+}
+
+/* Status badge colors */
+.status-active      { @apply bg-red-500/20 text-red-400 border border-red-500/30; }
+.status-acknowledged { @apply bg-yellow-500/20 text-yellow-400 border border-yellow-500/30; }
+.status-resolved    { @apply bg-green-500/20 text-green-400 border border-green-500/30; }
+
+html.light .status-active      { @apply bg-red-100 text-red-600 border-red-300; }
+html.light .status-acknowledged { @apply bg-amber-100 text-amber-700 border-amber-300; }
+html.light .status-resolved    { @apply bg-emerald-100 text-emerald-700 border-emerald-300; }
