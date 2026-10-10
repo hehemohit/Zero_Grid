@@ -735,7 +735,7 @@ SendSosScreen.kt
 4. Configure target backend in `app/build.gradle.kts`:
    - For Android Emulator connecting to local server: `buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:5000/\"")`
    - For physical device on local Wi-Fi: `buildConfigField("String", "BASE_URL", "\"http://192.168.x.x:5000/\"")`
-   - For deployed cloud server: `buildConfigField("String", "BASE_URL", "\"https://zerogridweb.onrender.com/\"")`
+   - For deployed cloud server: `buildConfigField("String", "BASE_URL", "\"https://zero-grid-l28u.onrender.com/\"")`
 5. Sync Gradle and run on device or emulator (Android 8.0+ / API 26+).
 
 ---

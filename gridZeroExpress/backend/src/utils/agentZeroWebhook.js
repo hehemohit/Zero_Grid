@@ -96,7 +96,7 @@ function triggerAgentZeroOrchestrationAsync(sosEvent, io) {
       if (VOICE_AGENT_LAMBDA_URL) {
         try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 2500); // 2.5s timeout
+          const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout to allow for Lambda cold starts
           const response = await fetch(VOICE_AGENT_LAMBDA_URL, {
             method: 'POST',
             headers: {

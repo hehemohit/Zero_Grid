@@ -20,4 +20,4 @@ scrape_configs:
     metrics_path: "/metrics"
     scheme: "https"
     static_configs:
-      - targets: ["zerogridweb.onrender.com"]
+      - targets: ["zero-grid-l28u.onrender.com"]

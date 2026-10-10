@@ -152,7 +152,7 @@ sequenceDiagram
 
 ## 4. Online WebSocket Packet Structure (`/sos` Namespace)
 
-When a new SOS event is created or updated, the Node.js server broadcasts the following JSON packet over **Socket.io** (`wss://zerogridweb.onrender.com/sos`):
+When a new SOS event is created or updated, the Node.js server broadcasts the following JSON packet over **Socket.io** (`wss://zero-grid-l28u.onrender.com/sos`):
 
 ```mermaid
 classDiagram

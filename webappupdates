@@ -61,7 +61,7 @@ The latest merge introduced **14,028 insertions across 59 files**, delivering fu
 ## 3. Backend API Reference for Android Integration
 
 - **Base URL (Local):** `http://10.0.2.2:5000` (Android Emulator) or `http://<LAN-IP>:5000` (Physical Device)
-- **Base URL (Production):** `https://zerogridweb.onrender.com`
+- **Base URL (Production):** `https://zero-grid-l28u.onrender.com`
 - **Default Headers:**
   - `Content-Type: application/json`
   - `Authorization: Bearer <jwt_token>` (for all authenticated endpoints)
@@ -431,7 +431,7 @@ if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 For authority rescue panels or active client monitoring:
 
 - **Namespace:** `/sos`
-- **Connection URL:** `wss://zerogridweb.onrender.com/sos` (or `ws://10.0.2.2:5000/sos` for local testing)
+- **Connection URL:** `wss://zero-grid-l28u.onrender.com/sos` (or `ws://10.0.2.2:5000/sos` for local testing)
 - **Events Emitted by Server:**
   - `sos:new`: Payload contains new `SosEvent` object.
   - `sos:updated`: Emitted when status changes to `ACKNOWLEDGED`, `RESOLVED`, or when new incident notes are added.
