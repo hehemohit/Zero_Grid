@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { TacticalAgentFlowSimulator } from '@/components/landing/TacticalAgentFlowSimulator';
+import { ActiveCasesMiniMap } from '@/components/landing/ActiveCasesMiniMap';
 
 interface TierDetail {
   title: string;
@@ -43,10 +44,10 @@ const TIER_DATA: Record<string, TierDetail> = {
     failover: 'Cross-Region Inference Profile (ap-south-1 to us-east-1)',
   },
   t6: {
-    title: 'INSPECTOR: TIER 6 // PERSISTENCE & MUTEX LOCKING',
-    runtime: 'MongoDB Atlas 2dsphere + Redis 7.2 Cluster + DynamoDB',
-    protocol: 'Redlock Mutex Algorithm / Geospatial GeoJSON Coordinates',
-    failover: 'Atlas Cross-Region Replica Sets with Automatic Leader Failover',
+    title: 'INSPECTOR: TIER 6 // DYNAMODB SCADA GRAPH & DATA PERSISTENCE',
+    runtime: 'Amazon DynamoDB (< 4ms 33kV SCADA Breaker State) + MongoDB Atlas 2dsphere + Redis 7.2',
+    protocol: 'Single-Table PK/SK Feeder Breaker Topology / Redlock Mutex / GeoJSON Coordinates',
+    failover: 'DynamoDB Global Tables Active-Active + Atlas Replica Sets + Redis Multi-AZ',
   },
 };
 
@@ -330,6 +331,11 @@ export default function LandingPage() {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Active Cases Tactical Mini-Map Preview (Powered by AWS Maps SDK // Amazon Location Service) */}
+          <div className="mt-8">
+            <ActiveCasesMiniMap />
           </div>
         </section>
 
@@ -748,7 +754,7 @@ export default function LandingPage() {
                 { id: 't3', title: 'TIER 3', name: 'Serverless Compute', icon: 'bolt', items: ['Lambda Voice Mangum', 'Lambda GenAI Ingest', 'SQS Backpressure Buffers'], metric: 'Cold start: < 45ms' },
                 { id: 't4', title: 'TIER 4 CORE', name: 'ECS Fargate Core', icon: 'smart_toy', items: ['Strands Agents SDK 1.19', 'AgentZero Orchestrator', 'MCP Tools Protocol Bridge'], metric: 'Status: Auto-Scale Active', isCore: true },
                 { id: 't5', title: 'TIER 5 BRAIN', name: 'Amazon Bedrock', icon: 'psychology', items: ['Claude 3.5 Sonnet', 'Claude 3 Haiku (Voice)', 'Bedrock Knowledge Bases'], metric: 'Confidence Floor: >= 65%' },
-                { id: 't6', title: 'TIER 6', name: 'Data & Mutex', icon: 'storage', items: ['MongoDB Atlas 2dsphere', 'DynamoDB 33kV SCADA', 'ElastiCache Redlock Mutex'], metric: 'No Race Conditions' },
+                { id: 't6', title: 'TIER 6 DATA', name: 'DynamoDB & Data', icon: 'database', items: ['Amazon DynamoDB 33kV SCADA', 'MongoDB Atlas 2dsphere Geo', 'ElastiCache Redlock Mutex'], metric: 'SCADA Latency: < 4ms' },
               ].map(t => (
                 <div
                   key={t.id}
@@ -1052,7 +1058,7 @@ export default function LandingPage() {
             </h2>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
             <div className="bg-white p-4 rounded-xl border border-slate-200 text-center shadow-2xs hover:border-emerald-300 transition-all">
               <span className="material-symbols-outlined text-emerald-800 text-2xl mb-1">android</span>
               <span className="text-xs font-bold text-slate-900 block">Kotlin 2.0</span>
@@ -1067,6 +1073,16 @@ export default function LandingPage() {
               <span className="material-symbols-outlined text-amber-700 text-2xl mb-1">cloud</span>
               <span className="text-xs font-bold text-slate-900 block">Amazon Bedrock</span>
               <span className="text-[10px] text-slate-500 font-mono">Claude 3.5 Sonnet</span>
+            </div>
+            <div className="bg-white p-4 rounded-xl border border-slate-200 text-center shadow-2xs hover:border-emerald-300 transition-all">
+              <span className="material-symbols-outlined text-emerald-800 text-2xl mb-1">map</span>
+              <span className="text-xs font-bold text-slate-900 block">AWS Maps SDK</span>
+              <span className="text-[10px] text-slate-500 font-mono">Amazon Location</span>
+            </div>
+            <div className="bg-white p-4 rounded-xl border border-slate-200 text-center shadow-2xs hover:border-emerald-300 transition-all">
+              <span className="material-symbols-outlined text-indigo-600 text-2xl mb-1">bolt</span>
+              <span className="text-xs font-bold text-slate-900 block">Amazon DynamoDB</span>
+              <span className="text-[10px] text-slate-500 font-mono">33kV SCADA Graph</span>
             </div>
             <div className="bg-white p-4 rounded-xl border border-slate-200 text-center shadow-2xs hover:border-emerald-300 transition-all">
               <span className="material-symbols-outlined text-red-600 text-2xl mb-1">lock</span>
