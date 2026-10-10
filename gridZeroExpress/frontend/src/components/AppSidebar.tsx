@@ -72,33 +72,6 @@ function SidebarNavContent() {
     };
   }, [user]);
 
-  const navLinks = [
-    {
-      href: '/dashboard',
-      label: 'Dashboard',
-      icon: LayoutDashboard,
-      active: pathname === '/dashboard',
-    },
-    {
-      href: '/contacts',
-      label: 'Contacts',
-      icon: Users,
-      active: pathname.startsWith('/contacts'),
-    },
-    {
-      href: '/family',
-      label: 'Family Links',
-      icon: UserCheck,
-      active: pathname.startsWith('/family'),
-    },
-    {
-      href: '/profile',
-      label: 'Profile',
-      icon: User,
-      active: pathname.startsWith('/profile'),
-    },
-  ];
-
   const adminLinks = [
     {
       href: '/admin',
@@ -114,6 +87,12 @@ function SidebarNavContent() {
       badge: activeSosCount > 0 ? activeSosCount : undefined,
     },
     {
+      href: '/dashboard',
+      label: 'Crisis Operations',
+      icon: LayoutDashboard,
+      active: pathname === '/dashboard',
+    },
+    {
       href: '/prediction',
       label: 'Prediction',
       icon: TrendingUp,
@@ -127,7 +106,7 @@ function SidebarNavContent() {
     },
     {
       href: '/admin?modal=nodes',
-      label: 'Nodes & Peering',
+      label: 'Nodes & Authority',
       icon: Cpu,
       active: pathname === '/admin' && currentModal === 'nodes',
     },
@@ -143,7 +122,7 @@ function SidebarNavContent() {
     <aside className="w-full md:w-64 flex-shrink-0 bg-surface border-b md:border-b-0 md:border-r border-hairline flex flex-col z-40 transition-colors duration-200 select-none">
       {/* Header Row */}
       <div className="flex items-center justify-between p-3.5 sm:p-5 md:border-b border-hairline">
-        <Link href="/dashboard" className="flex items-center gap-2 sm:gap-2.5">
+        <Link href="/admin" className="flex items-center gap-2 sm:gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-surfaceElevated border border-hairline flex items-center justify-center shadow-sm">
             <svg
               className="w-5 h-5 text-red-500"
@@ -162,7 +141,7 @@ function SidebarNavContent() {
               Zero<span className="text-brandTeal">Grid</span>
             </span>
             <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-brandTeal/10 text-brandTeal border border-brandTeal/20 uppercase tracking-wider font-mono">
-              {user?.role === 'ADMIN' ? 'Admin' : 'Mesh'}
+              Admin
             </span>
           </div>
         </Link>
@@ -198,73 +177,44 @@ function SidebarNavContent() {
         } md:flex flex-col flex-1 overflow-y-auto p-3 gap-1`}
       >
         <div className="hidden md:block px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-mutedGray font-semibold">
-          Navigation
+          Tactical Operations
         </div>
 
-        {navLinks.map((link) => {
+        {adminLinks.map((link) => {
           const Icon = link.icon;
           return (
             <Link
               key={link.href}
               href={link.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
+              className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
                 link.active
                   ? 'bg-surfaceElevated text-primaryText border border-hairline shadow-sm font-semibold'
                   : 'text-secondaryText hover:text-primaryText hover:bg-surfaceElevated/60 border border-transparent'
               }`}
             >
-              <Icon
-                className={`w-4 h-4 ${link.active ? 'text-brandTeal' : 'text-mutedGray'}`}
-              />
-              <span className="flex-1">{link.label}</span>
-              {link.active && <span className="w-1.5 h-1.5 rounded-full bg-brandTeal" />}
+              <div className="flex items-center gap-3">
+                <Icon
+                  className={`w-4 h-4 ${
+                    link.active
+                      ? 'text-brandTeal'
+                      : link.label === 'SOS Dispatch'
+                      ? 'text-red-500'
+                      : 'text-mutedGray'
+                  }`}
+                />
+                <span>{link.label}</span>
+              </div>
+              {link.badge !== undefined && (
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-red-500/10 text-red-500 border border-red-500/20 font-bold">
+                  {link.badge}
+                </span>
+              )}
+              {link.active && !link.badge && (
+                <span className="w-1.5 h-1.5 rounded-full bg-brandTeal" />
+              )}
             </Link>
           );
         })}
-
-        {/* Admin Section */}
-        {user?.role === 'ADMIN' && (
-          <div className="pt-3 mt-2 border-t border-hairline space-y-1">
-            <div className="px-3 py-1 text-[10px] font-mono uppercase tracking-wider text-mutedGray font-semibold">
-              Tactical Operations
-            </div>
-            {adminLinks.map((link) => {
-              const Icon = link.icon;
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all ${
-                    link.active
-                      ? 'bg-surfaceElevated text-primaryText border border-hairline shadow-sm font-semibold'
-                      : 'text-secondaryText hover:text-primaryText hover:bg-surfaceElevated/60 border border-transparent'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Icon
-                      className={`w-4 h-4 ${
-                        link.active
-                          ? 'text-red-500'
-                          : link.label === 'SOS Dispatch'
-                          ? 'text-red-500'
-                          : 'text-mutedGray'
-                      }`}
-                    />
-                    <span>{link.label}</span>
-                  </div>
-                  {link.badge !== undefined && (
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-red-500/10 text-red-500 border border-red-500/20 font-bold">
-                      {link.badge}
-                    </span>
-                  )}
-                  {link.active && !link.badge && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-brandTeal" />
-                  )}
-                </Link>
-              );
-            })}
-          </div>
-        )}
 
         {/* Footer Area: Theme Toggle, User Profile, Logout */}
         <div className="mt-auto pt-3 border-t border-hairline space-y-2">

@@ -8,6 +8,7 @@ function buildUserPayload(user) {
     email: user.email,
     displayName: user.displayName,
     role: user.role,
+    adminApproved: user.adminApproved ?? null,
     accountType: user.accountType || 'STANDARD',
     profileComplete: user.profileComplete || false,
     phoneNumber: user.phoneNumber || null,

@@ -107,15 +107,25 @@ function mapSosFromBackend(raw: any): SosEventUI {
 function mapUserFromBackend(raw: any): AdminUserUI {
   const id = String(raw.id || raw._id || '');
   const isAdmin = raw.role === 'ADMIN';
+  const isPendingApproval = isAdmin && raw.adminApproved === false;
   const shortId = id.length >= 4 ? id.slice(-4).toUpperCase() : '81FA';
+
+  let status: 'Active' | 'Standby' | 'Pending Approval' = 'Standby';
+  if (isPendingApproval) {
+    status = 'Pending Approval';
+  } else if (raw.adminApproved || raw.profileComplete) {
+    status = 'Active';
+  }
+
   return {
     id,
     name: raw.displayName || raw.email || 'ZeroGrid Node',
     email: raw.email || '',
     role: isAdmin ? 'ADMIN' : 'USER',
+    adminApproved: raw.adminApproved,
     nodeType: isAdmin ? 'AUTHORITY' : 'REGULAR',
     nodeAddress: `ZG-0x${shortId}`,
-    status: raw.adminApproved || raw.profileComplete ? 'Active' : 'Standby',
+    status,
   };
 }
 
@@ -220,8 +230,8 @@ const handleToggleDetourMode = useCallback(() => {
   }, [detourOrigin, detourDest, showToast]);
 
   useEffect(() => {
-    if (currentUser && currentUser.role !== 'ADMIN') {
-      router.replace('/dashboard');
+    if (currentUser && (currentUser.role !== 'ADMIN' || currentUser.adminApproved !== true)) {
+      router.replace('/auth/login');
     }
   }, [currentUser, router]);
 

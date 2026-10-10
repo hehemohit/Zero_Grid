@@ -48,7 +48,7 @@ export default function Navbar() {
                   {label}
                 </Link>
               ))}
-              {user.role === 'ADMIN' && (
+              {user.role === 'ADMIN' && user.adminApproved === true && (
                 <Link
                   href="/admin"
                   className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 ${
@@ -125,7 +125,7 @@ export default function Navbar() {
                   {label}
                 </Link>
               ))}
-              {user.role === 'ADMIN' && (
+              {user.role === 'ADMIN' && user.adminApproved === true && (
                 <Link href="/admin" onClick={() => setOpen(false)} className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-orange-400 hover:bg-white/5 transition-colors">
                   <AlertTriangle className="w-4 h-4" />
                   Admin Panel

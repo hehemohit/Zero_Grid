@@ -14,14 +14,14 @@ export default function RegisterPage() {
     displayName: '',
     email: '',
     password: '',
-    role: 'CITIZEN' as 'CITIZEN' | 'ADMIN',
   });
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [registeredSuccess, setRegisteredSuccess] = useState(false);
 
   function set(k: keyof typeof form) {
-    return (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+    return (e: React.ChangeEvent<HTMLInputElement>) =>
       setForm(prev => ({ ...prev, [k]: e.target.value }));
   }
 
@@ -34,13 +34,46 @@ export default function RegisterPage() {
     setError('');
     setLoading(true);
     try {
-      await register(form);
-      router.push('/dashboard');
+      await register({ ...form, role: 'CITIZEN' });
+      setRegisteredSuccess(true);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Registration failed');
     } finally {
       setLoading(false);
     }
+  }
+
+  if (registeredSuccess) {
+    return (
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4 py-12">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_0%,rgba(16,185,129,0.1),transparent)]" />
+        <div className="relative w-full max-w-md space-y-6 text-center">
+          <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto text-emerald-400">
+            <Shield className="w-8 h-8" />
+          </div>
+          <h1 className="text-2xl font-black text-white">Citizen Account Created</h1>
+          <div className="glass-card rounded-2xl p-6 text-left space-y-4">
+            <p className="text-sm text-gray-300">
+              Welcome to ZeroGrid, <strong className="text-white">{form.displayName}</strong>.
+            </p>
+            <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-xs text-emerald-300 leading-relaxed">
+              📱 <strong>Mobile Application Required:</strong> Citizen accounts operate exclusively via the <strong>ZeroGrid Android App</strong> for decentralized BLE mesh routing, offline hazard detection, and SOS dispatch.
+            </div>
+            <p className="text-xs text-gray-400">
+              The web console is strictly reserved for emergency command dispatchers and administrators.
+            </p>
+            <div className="pt-2">
+              <Link
+                href="/auth/login"
+                className="w-full inline-flex justify-center items-center py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-gray-950 font-bold text-sm transition-colors"
+              >
+                Return to Sign In
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -62,6 +95,11 @@ export default function RegisterPage() {
               {error}
             </div>
           )}
+
+          <div className="p-3 bg-white/5 border border-white/10 rounded-xl text-xs text-gray-400 flex items-center gap-2">
+            <span>ℹ️</span>
+            <span>Public registration creates standard Citizen accounts for the mobile mesh app.</span>
+          </div>
 
           <form id="register-form" onSubmit={handleSubmit} className="space-y-5">
             <Input
@@ -105,22 +143,6 @@ export default function RegisterPage() {
                   {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label htmlFor="reg-role" className="block text-sm font-medium text-gray-300">Account Role</label>
-              <select
-                id="reg-role"
-                value={form.role}
-                onChange={set('role')}
-                className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2.5 text-sm text-gray-100 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-colors"
-              >
-                <option value="CITIZEN">Citizen</option>
-                <option value="ADMIN">Admin / Rescue Team</option>
-              </select>
-              {form.role === 'ADMIN' && (
-                <p className="text-xs text-yellow-500/80 mt-1">⚠ Admin accounts require approval before login is enabled.</p>
-              )}
             </div>
 
             <Button type="submit" id="register-submit" loading={loading} className="w-full" size="lg">

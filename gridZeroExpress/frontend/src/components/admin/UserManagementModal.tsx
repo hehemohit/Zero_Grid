@@ -8,9 +8,10 @@ export interface AdminUserUI {
   name: string;
   email: string;
   role: 'ADMIN' | 'USER';
+  adminApproved?: boolean | null;
   nodeType: 'AUTHORITY' | 'REGULAR';
   nodeAddress: string;
-  status: 'Active' | 'Standby';
+  status: 'Active' | 'Standby' | 'Pending Approval';
 }
 
 interface UserManagementModalProps {
@@ -62,7 +63,7 @@ export function UserManagementModal({
                 </span>
               </div>
               <p className="text-xs text-mutedGray mt-0.5">
-                Manage ZeroGrid peer nodes, promote field dispatchers, and revoke admin privileges.
+                Manage ZeroGrid peer nodes, approve pending field dispatchers, promote citizens, or revoke authority.
               </p>
             </div>
           </div>
@@ -120,6 +121,8 @@ export function UserManagementModal({
                 ) : (
                   users.map((u) => {
                     const isAdmin = u.role === 'ADMIN';
+                    const isPendingApproval = isAdmin && u.adminApproved === false;
+                    const isApprovedAdmin = isAdmin && u.adminApproved === true;
                     const isSelf = Boolean(
                       (currentUserId && u.id === currentUserId) ||
                       (currentUserEmail && u.email && u.email.toLowerCase() === currentUserEmail.toLowerCase())
@@ -130,10 +133,13 @@ export function UserManagementModal({
                         <td className="py-3.5 pl-3">
                           <div className="flex items-center gap-3">
                             <div
-                              className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${isAdmin
+                              className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${
+                                isPendingApproval
+                                  ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
+                                  : isApprovedAdmin
                                   ? 'bg-brandTealDark text-brandTeal border border-brandTeal/30 shadow-glow-teal'
                                   : 'bg-surfaceElevated text-secondaryText border border-hairline'
-                                }`}
+                              }`}
                             >
                               {isAdmin ? (
                                 <Shield className="w-4 h-4" />
@@ -158,12 +164,19 @@ export function UserManagementModal({
                         {/* Role */}
                         <td className="py-3.5">
                           <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider font-mono ${isAdmin
+                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider font-mono ${
+                              isPendingApproval
+                                ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
+                                : isApprovedAdmin
                                 ? 'bg-brandTealDark text-brandTeal border border-brandTeal/30'
                                 : 'bg-surfaceElevated text-mutedGray border border-hairline'
-                              }`}
+                            }`}
                           >
-                            {isAdmin ? 'Admin / Authority' : 'Citizen Node'}
+                            {isPendingApproval
+                              ? 'Pending Approval'
+                              : isApprovedAdmin
+                              ? 'Admin / Authority'
+                              : 'Citizen Node'}
                           </span>
                         </td>
 
@@ -175,14 +188,37 @@ export function UserManagementModal({
                         {/* Status */}
                         <td className="py-3.5">
                           <span className="inline-flex items-center gap-1.5 text-xs text-secondaryText">
-                            <span className="w-1.5 h-1.5 rounded-full bg-brandTeal shadow-glow-teal"></span>
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                isPendingApproval
+                                  ? 'bg-amber-400 animate-pulse'
+                                  : 'bg-brandTeal shadow-glow-teal'
+                              }`}
+                            ></span>
                             {u.status}
                           </span>
                         </td>
 
                         {/* Actions (Strict API: POST /api/admin/admins, DELETE /api/admin/admins/:userId) */}
                         <td className="py-3.5 pr-3 text-right">
-                          {isAdmin ? (
+                          {isPendingApproval ? (
+                            <div className="inline-flex items-center gap-2">
+                              <button
+                                onClick={() => onPromoteAdmin(u.email, u.name)}
+                                className="px-3 py-1.5 rounded-16dp bg-brandTeal hover:bg-brandTealGlow text-canvas font-bold text-xs transition-colors shadow-glow-teal"
+                                title="Approve and promote admin (POST /api/admin/admins)"
+                              >
+                                Approve Admin
+                              </button>
+                              <button
+                                onClick={() => onDemoteAdmin(u.id, u.name)}
+                                className="px-2.5 py-1.5 rounded-16dp bg-surfaceCard hover:bg-red-500/10 border border-hairline text-mutedGray hover:text-red-400 font-medium text-xs transition-colors"
+                                title="Reject and demote to citizen (DELETE /api/admin/admins/:userId)"
+                              >
+                                Reject
+                              </button>
+                            </div>
+                          ) : isApprovedAdmin ? (
                             isSelf ? (
                               <button
                                 disabled

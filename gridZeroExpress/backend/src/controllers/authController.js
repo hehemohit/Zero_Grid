@@ -23,6 +23,7 @@ function buildUserPayload(user) {
     email: user.email,
     displayName: user.displayName,
     role: user.role,
+    adminApproved: user.adminApproved ?? null,
     accountType: user.accountType || 'STANDARD',
     profileComplete: user.profileComplete || false,
     phoneNumber: user.phoneNumber || null,
@@ -38,10 +39,13 @@ async function register(req, res) {
   try {
     const { email, password, displayName, role } = req.body;
 
-    // 1. Role validation
-    if (!role || !['CITIZEN', 'ADMIN'].includes(role)) {
-      return res.status(400).json({ message: 'Role must be either CITIZEN or ADMIN' });
+    // 1. Role validation: Public self-registration is strictly restricted to CITIZEN
+    if (role && role !== 'CITIZEN') {
+      return res.status(403).json({
+        message: 'Self-registration as ADMIN is prohibited. Contact an existing administrator for promotion.'
+      });
     }
+    const assignedRole = 'CITIZEN';
 
     // 2. Email validation
     if (!email || !EMAIL_REGEX.test(email)) {
@@ -69,15 +73,15 @@ async function register(req, res) {
     const saltRounds = 10;
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
-    // 7. Role-based approval status
-    const adminApproved = role === 'ADMIN' ? false : null;
+    // 7. Role-based approval status (null for Citizens)
+    const adminApproved = null;
 
     // 8. Create user - profileComplete starts false
     const newUser = await User.create({
       email: normalizedEmail,
       passwordHash,
       displayName: displayName.trim(),
-      role,
+      role: assignedRole,
       adminApproved,
       authProvider: 'LOCAL',
       profileComplete: false

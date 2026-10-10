@@ -13,14 +13,14 @@ export interface User {
   dateOfBirth: string | null;
   photoUrl: string | null;
   createdAt: string;
-  adminApproved?: boolean;
+  adminApproved?: boolean | null;
 }
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
@@ -30,7 +30,7 @@ interface RegisterData {
   email: string;
   password: string;
   displayName: string;
-  role: 'CITIZEN' | 'ADMIN';
+  role?: 'CITIZEN' | 'ADMIN';
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -61,11 +61,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [fetchMe]);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<User> => {
     const data = await api.post<{ token: string; user: User }>('/api/auth/login', { email, password });
     setToken(data.token);
     setTokenState(data.token);
     setUser(data.user);
+    return data.user;
   };
 
   const register = async (formData: RegisterData) => {
