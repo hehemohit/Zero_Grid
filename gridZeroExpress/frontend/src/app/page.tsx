@@ -158,12 +158,12 @@ export default function LandingPage() {
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 transition-all">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           {/* Brand Anchor Logo */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0">
             <Link className="flex items-center gap-2.5" href="/">
-              <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-800 shadow-sm">
+              <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-800 shadow-sm shrink-0">
                 <span className="material-symbols-outlined text-[22px]">hub</span>
               </div>
-              <div>
+              <div className="whitespace-nowrap">
                 <div className="flex items-center gap-2">
                   <span className="font-display font-bold text-lg text-emerald-950 tracking-tight">ZeroGrid</span>
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
@@ -179,7 +179,7 @@ export default function LandingPage() {
           </div>
 
           {/* Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-6 text-sm font-medium text-slate-600">
+          <nav className="hidden xl:flex items-center gap-6 text-sm font-medium text-slate-600 whitespace-nowrap">
             <a className="hover:text-emerald-800 transition-colors" href="#dual-path">Dual-Path RF Mesh</a>
             <a className="hover:text-emerald-800 transition-colors" href="#architecture">AWS Topology</a>
             <a className="hover:text-emerald-800 transition-colors" href="#multi-agent">Strands Agents SDK</a>
@@ -189,7 +189,7 @@ export default function LandingPage() {
           </nav>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 shrink-0 whitespace-nowrap">
             <Link
               className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-all shadow-sm"
               href="/auth/login"
@@ -230,7 +230,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mb-10">
             <div className="lg:col-span-8 space-y-5">
               <h1 className="text-3xl sm:text-5xl lg:text-[54px] font-display font-bold text-slate-900 tracking-tight leading-[1.12]">
-                Saving Lives When <span className="text-emerald-800 underline decoration-emerald-200 decoration-wavy underline-offset-4">Mobile Towers Submerge</span> &amp; Power Grids Die
+                Saving Lives When <span className="text-emerald-800">Mobile Towers Submerge</span> &amp; Power Grids Die
               </h1>
               <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-3xl">
                 ZeroGrid is an autonomous off-grid rescue coordination engine engineered for extreme Indian monsoons. Powered by Native Android BLE 5.0 / Wi-Fi Direct P2P Mesh with opportunistic cloud uplink into AWS ECS Fargate running <strong className="text-emerald-950 font-semibold">AgentZero (Strands Agents SDK &amp; Amazon Bedrock Claude 3.5 Sonnet)</strong> to prevent 33kV high-voltage electrocutions and direct rescue boats away from flooded death-traps.

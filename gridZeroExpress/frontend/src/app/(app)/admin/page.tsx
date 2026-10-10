@@ -726,12 +726,12 @@ const handleToggleDetourMode = useCallback(() => {
               <button
                 onClick={() => setIsCrisisCommandOpen(true)}
                 title="Open Autonomous Predictive Crisis Command Center (AWS Strands)"
-                className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-gradient-to-r from-teal-500/20 via-brandTeal/30 to-emerald-500/20 text-brandTeal border border-brandTeal/50 hover:border-brandTeal hover:shadow-glow-teal transition-all shadow-sm"
+                className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:border-emerald-400 hover:bg-emerald-500/20 transition-all shadow-sm"
               >
-                <Zap className="w-3.5 h-3.5 text-brandTeal animate-pulse" />
+                <Zap className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
                 <span className="hidden sm:inline">Predictive Command</span>
                 <span className="sm:hidden">Command</span>
-                <span className="hidden md:inline-block text-[9px] bg-brandTeal/20 text-brandTeal px-1 rounded font-mono">
+                <span className="hidden md:inline-block text-[9px] bg-emerald-500/20 text-emerald-400 px-1 rounded font-mono">
                   AWS STRANDS
                 </span>
               </button>
@@ -741,16 +741,16 @@ const handleToggleDetourMode = useCallback(() => {
                 onClick={handleRunBatchDispatch}
                 disabled={isBatchRunning || actionLoading}
                 title="Manual Consolidate: Immediately scans all active SOS beacons, clusters nearby alerts into shared incident zones, contextualizes root causes, and assigns tactical teams."
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-gradient-to-r from-cyan-500/20 via-sky-500/20 to-teal-500/20 text-cyan-300 border border-cyan-400/50 hover:border-cyan-300 hover:shadow-glow-teal transition-all shadow-sm disabled:opacity-50"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 hover:border-emerald-400 hover:bg-emerald-500/20 transition-all shadow-sm disabled:opacity-50"
               >
                 {isBatchRunning ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-cyan-400" />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-400" />
                 ) : (
-                  <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
+                  <Sparkles className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
                 )}
                 <span className="hidden sm:inline">Manual Consolidate</span>
                 <span className="sm:hidden">Consolidate</span>
-                <span className="text-[9px] bg-cyan-500/30 text-cyan-200 px-1 py-0.5 rounded font-mono font-bold">
+                <span className="text-[9px] bg-emerald-500/25 text-emerald-300 px-1 py-0.5 rounded font-mono font-bold">
                   ON-DEMAND
                 </span>
               </button>

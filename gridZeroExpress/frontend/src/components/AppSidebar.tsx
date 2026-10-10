@@ -122,27 +122,22 @@ function SidebarNavContent() {
     <aside className="w-full md:w-64 flex-shrink-0 bg-surface border-b md:border-b-0 md:border-r border-hairline flex flex-col z-40 transition-colors duration-200 select-none">
       {/* Header Row */}
       <div className="flex items-center justify-between p-3.5 sm:p-5 md:border-b border-hairline">
-        <Link href="/admin" className="flex items-center gap-2 sm:gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-surfaceElevated border border-hairline flex items-center justify-center shadow-sm">
-            <svg
-              className="w-5 h-5 text-red-500"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-            </svg>
+        <Link href="/admin" className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 shadow-sm shrink-0">
+            <span className="material-symbols-outlined text-[18px]">hub</span>
           </div>
-          <div className="flex items-baseline gap-1.5">
-            <span className="font-bold text-lg tracking-tight text-primaryText font-display">
-              Zero<span className="text-brandTeal">Grid</span>
-            </span>
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-brandTeal/10 text-brandTeal border border-brandTeal/20 uppercase tracking-wider font-mono">
-              Admin
-            </span>
+          <div>
+            <div className="flex items-center gap-1.5">
+              <span className="font-bold text-base tracking-tight text-primaryText font-display">
+                Zero<span className="text-emerald-500">Grid</span>
+              </span>
+              <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 uppercase tracking-wider font-mono">
+                OPS
+              </span>
+            </div>
+            <div className="text-[9px] font-mono text-mutedGray -mt-0.5">
+              AP-SOUTH-1 DISPATCH
+            </div>
           </div>
         </Link>
 

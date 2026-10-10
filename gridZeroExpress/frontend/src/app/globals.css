@@ -1,6 +1,9 @@
 @import "tailwindcss";
 
 @theme {
+  --font-sans: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
   --color-canvas: #070B14;
   --color-surface: #0F172A;
   --color-surfaceElevated: #162035;
@@ -11,17 +14,17 @@
   --color-secondaryText: #CBD5E1;
   --color-mutedGray: #94A3B8;
   --color-dimGray: #64748B;
-  --color-brandTeal: #2DD4BF;
-  --color-brandTealGlow: #14B8A6;
-  --color-brandTealDark: #0B252E;
-  --color-brandTealLight: #132F38;
+  --color-brandTeal: #10B981;
+  --color-brandTealGlow: #059669;
+  --color-brandTealDark: #042F2E;
+  --color-brandTealLight: #064E3B;
   --color-alertRed: #EF4444;
   --color-alertRedBg: rgba(239, 68, 68, 0.12);
   --color-alertRedBorder: rgba(239, 68, 68, 0.35);
   --color-alertRedGlow: rgba(239, 68, 68, 0.25);
   --radius-16dp: 16px;
   --shadow-glow-red: 0 0 16px -2px rgba(239, 68, 68, 0.35);
-  --shadow-glow-teal: 0 0 16px -2px rgba(45, 212, 191, 0.25);
+  --shadow-glow-teal: 0 0 16px -2px rgba(16, 185, 129, 0.25);
   --shadow-panel-dark: 0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(30, 41, 59, 0.8);
 }
 
@@ -29,6 +32,7 @@
   --red-primary: #ef4444;
   --red-glow: rgba(239, 68, 68, 0.3);
   --orange-accent: #f97316;
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 /* ── Light Theme Overrides ────────────────────────────────────────────────── */
