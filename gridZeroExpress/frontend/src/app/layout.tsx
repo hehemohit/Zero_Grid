@@ -7,13 +7,13 @@ import { ThemeProvider } from "@/context/ThemeContext";
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
 
 export const metadata: Metadata = {
-  title: "ZeroGrid — Emergency Rescue Network",
+  title: "ZeroGrid // Autonomous Emergency Response & Off-Grid Mesh Platform",
   description:
-    "ZeroGrid is an offline-first emergency mesh network and rescue coordination platform. Works without internet via BLE & Wi-Fi Direct, and escalates SOS alerts online when connected.",
-  keywords: ["emergency", "rescue", "SOS", "mesh network", "offline", "safety"],
+    "Autonomous off-grid rescue coordination engine engineered for extreme Indian monsoons. Powered by Native Android BLE 5.0 / Wi-Fi Direct P2P Mesh with opportunistic cloud uplink into AWS ECS Fargate running AgentZero (Strands Agents SDK & Amazon Bedrock Claude 3.5 Sonnet).",
+  keywords: ["emergency", "rescue", "SOS", "mesh network", "offline", "safety", "BLE", "AWS Bedrock", "Strands Agents"],
   openGraph: {
-    title: "ZeroGrid — Emergency Rescue Network",
-    description: "Offline-first emergency mesh network and rescue coordination platform.",
+    title: "ZeroGrid // Autonomous Emergency Response & Off-Grid Mesh Platform",
+    description: "Autonomous off-grid rescue coordination engine engineered for extreme Indian monsoons.",
     type: "website",
   },
 };
@@ -25,6 +25,18 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={geist.variable}>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap"
+          rel="stylesheet"
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       {/*
         bg-canvas / text-primaryText use CSS variables defined in globals.css.
         When ThemeProvider adds .light to <html>, those variables switch automatically.

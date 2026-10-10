@@ -151,3 +151,31 @@ html.light .glass-card {
 html.light .status-active      { @apply bg-red-100 text-red-600 border-red-300; }
 html.light .status-acknowledged { @apply bg-amber-100 text-amber-700 border-amber-300; }
 html.light .status-resolved    { @apply bg-emerald-100 text-emerald-700 border-emerald-300; }
+
+/* Clean tactical grid subtle pattern */
+.tactical-grid-bg {
+  background-image: 
+    radial-gradient(circle at 1px 1px, rgba(148, 163, 184, 0.25) 1px, transparent 0),
+    linear-gradient(to right, rgba(226, 232, 240, 0.4) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(226, 232, 240, 0.4) 1px, transparent 1px);
+  background-size: 24px 24px, 48px 48px, 48px 48px;
+}
+
+.pulse-ring {
+  animation: pulse-ring-anim 2s infinite ease-out;
+}
+@keyframes pulse-ring-anim {
+  0% { transform: scale(0.9); opacity: 0.9; }
+  50% { transform: scale(1.35); opacity: 0.2; }
+  100% { transform: scale(0.9); opacity: 0.9; }
+}
+
+/* Radar scan */
+@keyframes sweep {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.radar-sweep-anim {
+  animation: sweep 5s linear infinite;
+}
+
