@@ -1,0 +1,1094 @@
+'use client';
+
+import React, { useState, useMemo, useEffect, useCallback, useRef, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
+import { api } from '@/lib/api';
+import { io, Socket } from 'socket.io-client';
+import {
+  Users,
+  Search,
+  CheckCircle,
+  Shield,
+  ShieldCheck,
+  User,
+  Battery,
+  Radio,
+  ChevronRight,
+  Loader2,
+  Building2,
+  Compass,
+  Trash2,
+  Route,
+  Navigation,
+  Zap,
+  RotateCcw,
+  Sparkles,
+  Play,
+  Pause
+} from 'lucide-react';
+import { MapCanvas } from '@/components/admin/MapCanvas';
+import { SosDrawer, SosEventUI, NoteItem } from '@/components/admin/SosDrawer';
+import { UserManagementModal, AdminUserUI } from '@/components/admin/UserManagementModal';
+import { CrisisCommandModal } from '@/components/admin/CrisisCommandModal';
+
+interface Toast {
+  message: string;
+  type: 'success' | 'info' | 'error';
+}
+
+// --- Data Normalization Helpers ---
+function mapSosFromBackend(raw: any): SosEventUI {
+  const rawId = String(raw.id || raw._id || '');
+  const user = raw.triggeredBy || {};
+  const isAuthority = user.role === 'ADMIN';
+
+  const coords = raw.location?.coordinates;
+  let locStr = 'Grid Sector Telemetry';
+  if (Array.isArray(coords) && coords.length === 2) {
+    locStr = `Coordinates: ${coords[1]?.toFixed(4)}, ${coords[0]?.toFixed(4)}`;
+  } else if (typeof raw.location === 'string' && raw.location.trim()) {
+    locStr = raw.location;
+  }
+
+  const notesList: NoteItem[] = Array.isArray(raw.notes)
+    ? raw.notes.map((n: any, idx: number) => ({
+      id: String(n._id || n.id || `n-${idx}`),
+      author: n.authorId?.displayName || n.author || 'Dispatch Lead',
+      text: n.text || '',
+      createdAt: n.timestamp || n.createdAt || new Date().toISOString(),
+    }))
+    : [];
+
+  const accuracy = typeof raw.accuracyMeters === 'number' ? raw.accuracyMeters : 15;
+  const battery = typeof raw.batteryPercentage === 'number' && !isNaN(raw.batteryPercentage) ? `${Math.round(raw.batteryPercentage)}%` : 'Not Found';
+  const peerCount = Math.max(2, Math.round(20 - accuracy / 3));
+
+  const displayId = rawId.length >= 6 ? `sos-${rawId.slice(-4)}` : (rawId || `sos-${Math.floor(1000 + Math.random() * 9000)}`);
+
+  let assignedAdminData = raw.assignedAdmin || null;
+  if (assignedAdminData && typeof assignedAdminData === 'object') {
+    assignedAdminData = {
+      id: String(assignedAdminData.id || assignedAdminData._id || ''),
+      displayName: assignedAdminData.displayName || assignedAdminData.email || 'Admin',
+      email: assignedAdminData.email || '',
+      photoUrl: assignedAdminData.photoUrl || ''
+    };
+  }
+
+  return {
+    id: displayId,
+    rawId,
+    userId: String(user._id || user.id || 'usr-anon'),
+    userName: user.displayName || user.email || 'Citizen Node',
+    userEmail: user.email || '',
+    role: isAuthority ? 'AUTHORITY' : 'REGULAR',
+    status: raw.status || 'ACTIVE',
+    severity: raw.category || 'HIGH',
+    category: raw.category || raw.severity || 'SOS',
+    location: locStr,
+    coordinates: Array.isArray(coords) ? [coords[1], coords[0]] : undefined,
+    timestamp: raw.createdAt || new Date().toISOString(),
+    batteryLevel: battery,
+    peerNodesInRange: peerCount,
+    message: raw.message || '',
+    notes: notesList,
+    assignedAdmin: assignedAdminData,
+    assignedSquad: raw.assignedSquad || null,
+    agentZeroAdvisory: raw.agentZeroAdvisory || null,
+    affectedNodeId: raw.affectedNodeId || null,
+    waterDepthCm: typeof raw.waterDepthCm === 'number' ? raw.waterDepthCm : 0,
+    passability: raw.passability || 'ALL_PASSABLE',
+    relayedByMule: Boolean(raw.relayedByMule),
+    transport: raw.transport || 'ONLINE',
+  };
+}
+
+function mapUserFromBackend(raw: any): AdminUserUI {
+  const id = String(raw.id || raw._id || '');
+  const isAdmin = raw.role === 'ADMIN';
+  const shortId = id.length >= 4 ? id.slice(-4).toUpperCase() : '81FA';
+  return {
+    id,
+    name: raw.displayName || raw.email || 'ZeroGrid Node',
+    email: raw.email || '',
+    role: isAdmin ? 'ADMIN' : 'USER',
+    nodeType: isAdmin ? 'AUTHORITY' : 'REGULAR',
+    nodeAddress: `ZG-0x${shortId}`,
+    status: raw.adminApproved || raw.profileComplete ? 'Active' : 'Standby',
+  };
+}
+
+function AdminDashboardContent() {
+  const { user: currentUser } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const [sosEvents, setSosEvents] = useState<SosEventUI[]>([]);
+  const [hqs, setHqs] = useState<any[]>([]);
+  const [users, setUsers] = useState<AdminUserUI[]>([]);
+  const [selectedSosId, setSelectedSosId] = useState<string | null>(null);
+  const [selectedHqId, setSelectedHqId] = useState<string | null>(null);
+  const [drawerSosId, setDrawerSosId] = useState<string | null>(null);
+  const [selectedSosDetails, setSelectedSosDetails] = useState<SosEventUI | null>(null);
+  const [isUserManagementOpen, setIsUserManagementOpen] = useState(false);
+  const [isCrisisCommandOpen, setIsCrisisCommandOpen] = useState(false);
+  const [activeSosTab, setActiveSosTab] = useState<'FEED' | 'HISTORY'>('FEED');
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortOption, setSortOption] = useState<'DATE_DESC' | 'DATE_ASC' | 'STATUS'>('DATE_DESC');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'ACKNOWLEDGED'>('ALL');
+
+  const [userSearch, setUserSearch] = useState('');
+  const [isUsersLoading, setIsUsersLoading] = useState(false);
+  const [isSosLoading, setIsSosLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [drawerLoading, setDrawerLoading] = useState(false);
+  const [toast, setToast] = useState<Toast | null>(null);
+  const [noteInput, setNoteInput] = useState('');
+  const [optimizedRouteData, setOptimizedRouteData] = useState<any>(null);
+  const [isOptimizingRoute, setIsOptimizingRoute] = useState(false);
+  const [systemStats, setSystemStats] = useState<any>(null);
+  const socketRef = useRef<Socket | null>(null);
+
+  const [detourMode, setDetourMode] = useState(false);
+  const [detourOrigin, setDetourOrigin] = useState<[number, number] | null>(null);
+  const [detourDest, setDetourDest] = useState<[number, number] | null>(null);
+  const [detourResult, setDetourResult] = useState<any | null>(null);
+  const [isDetourLoading, setIsDetourLoading] = useState(false);
+
+  const fetchSystemStats = useCallback(async () => {
+    try {
+      const stats = await api.get('/api/admin/system-stats');
+      setSystemStats(stats);
+    } catch {
+      // Non-blocking fallback
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchSystemStats();
+    const interval = setInterval(fetchSystemStats, 4000);
+    return () => clearInterval(interval);
+  }, [fetchSystemStats]);
+
+  const showToast = useCallback((message: string, type: 'success' | 'info' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3800);
+  }, []);
+
+const handleToggleDetourMode = useCallback(() => {
+    setDetourMode((prev) => {
+      const next = !prev;
+      if (!next) {
+        setDetourOrigin(null);
+        setDetourDest(null);
+        setDetourResult(null);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleDetourMapClick = useCallback(async (lat: number, lng: number) => {
+    if (!detourOrigin) {
+      setDetourOrigin([lat, lng]);
+      showToast('Detour Origin (A) set. Click destination on map.', 'info');
+    } else if (!detourDest) {
+      setDetourDest([lat, lng]);
+      setIsDetourLoading(true);
+      showToast('Calculating safe detour route via AWS Strands Agent...', 'info');
+      try {
+        const res = await api.post<any>('/api/routes/detour', {
+          originLat: detourOrigin[0],
+          originLng: detourOrigin[1],
+          destLat: lat,
+          destLng: lng
+        });
+        setDetourResult(res);
+        showToast(res.warningMessage || 'Safe detour calculated by AWS Strands Agent!');
+      } catch (err: any) {
+        showToast(err.message || 'Failed to calculate detour route', 'error');
+      } finally {
+        setIsDetourLoading(false);
+      }
+    } else {
+      setDetourOrigin([lat, lng]);
+      setDetourDest(null);
+      setDetourResult(null);
+      showToast('Detour reset. Origin (A) placed. Click destination.', 'info');
+    }
+  }, [detourOrigin, detourDest, showToast]);
+
+  useEffect(() => {
+    if (currentUser && currentUser.role !== 'ADMIN') {
+      router.replace('/dashboard');
+    }
+  }, [currentUser, router]);
+
+  const handleCloseUserManagement = useCallback(() => {
+    setIsUserManagementOpen(false);
+    const params = new URLSearchParams(searchParams.toString());
+    if (params.has('modal')) {
+      params.delete('modal');
+      const newQuery = params.toString();
+      router.replace(newQuery ? `/admin?${newQuery}` : '/admin');
+    }
+  }, [searchParams, router]);
+
+  useEffect(() => {
+    const filterParam = searchParams.get('filter');
+    const modalParam = searchParams.get('modal');
+
+    if (filterParam === 'ACTIVE') {
+      setStatusFilter('ACTIVE');
+      setActiveSosTab('FEED');
+    } else if (filterParam === 'ALL') {
+      setStatusFilter('ALL');
+      setActiveSosTab('FEED');
+    }
+
+    if (modalParam === 'nodes') {
+      setIsUserManagementOpen(true);
+    } else {
+      setIsUserManagementOpen(false);
+    }
+  }, [searchParams]);
+
+  const fetchSosEvents = useCallback(async () => {
+    setIsSosLoading(true);
+    try {
+      if (activeSosTab === 'HISTORY') {
+        const res = await api.get<{ events: any[] }>('/api/admin/sos/history?limit=50');
+        const mapped = (res.events || []).map(mapSosFromBackend);
+        setSosEvents(mapped);
+      } else {
+        if (statusFilter === 'ALL') {
+          const [activeRes, ackRes] = await Promise.all([
+            api.get<{ events: any[] }>('/api/admin/sos?status=ACTIVE&limit=50').catch(() => ({ events: [] })),
+            api.get<{ events: any[] }>('/api/admin/sos?status=ACKNOWLEDGED&limit=50').catch(() => ({ events: [] })),
+          ]);
+          const combined = [...(activeRes.events || []), ...(ackRes.events || [])];
+          setSosEvents(combined.map(mapSosFromBackend));
+        } else {
+          const res = await api.get<{ events: any[] }>(`/api/admin/sos?status=${statusFilter}&limit=50`);
+          setSosEvents((res.events || []).map(mapSosFromBackend));
+        }
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to fetch SOS events', 'error');
+    } finally {
+      setIsSosLoading(false);
+    }
+  }, [activeSosTab, statusFilter, showToast]);
+
+  const fetchSosDetails = useCallback(async (sosItem: SosEventUI) => {
+    setDrawerLoading(true);
+    try {
+      const targetId = sosItem.rawId || sosItem.id;
+      const res = await api.get<{ sos: any }>(`/api/sos/${targetId}`);
+      if (res && res.sos) {
+        setSelectedSosDetails(mapSosFromBackend(res.sos));
+      } else {
+        setSelectedSosDetails(sosItem);
+      }
+    } catch {
+      setSelectedSosDetails(sosItem);
+    } finally {
+      setDrawerLoading(false);
+    }
+  }, []);
+
+  const fetchUsers = useCallback(async (query = '') => {
+    setIsUsersLoading(true);
+    try {
+      const endpoint = query.trim()
+        ? `/api/admin/users?q=${encodeURIComponent(query.trim())}&limit=50`
+        : '/api/admin/users?limit=50';
+      const res = await api.get<{ users: any[] }>(endpoint);
+      setUsers((res.users || []).map(mapUserFromBackend));
+    } catch (err: any) {
+      showToast(err.message || 'Failed to fetch users', 'error');
+    } finally {
+      setIsUsersLoading(false);
+    }
+  }, [showToast]);
+
+  const fetchHqs = useCallback(async () => {
+    try {
+      const res = await api.get<{ hqs: any[] }>('/api/admin/hq');
+      setHqs(res.hqs || []);
+    } catch {
+      // Ignore HQ fetch error on main dash
+    }
+  }, []);
+
+  const fetchBatchStatus = useCallback(async () => {
+    try {
+      const res = await api.get<{ success: boolean; isPaused: boolean }>('/api/admin/sos/batch-dispatch/status');
+      if (res && typeof res.isPaused === 'boolean') {
+        setIsBatchPaused(res.isPaused);
+      }
+    } catch {
+      // Non-blocking fallback
+    }
+  }, []);
+
+  useEffect(() => { fetchSosEvents(); }, [fetchSosEvents]);
+  useEffect(() => { fetchHqs(); }, [fetchHqs]);
+  useEffect(() => { fetchUsers(); }, [fetchUsers]);
+  useEffect(() => { fetchBatchStatus(); }, [fetchBatchStatus]);
+  useEffect(() => { if (isUserManagementOpen) fetchUsers(userSearch); }, [isUserManagementOpen, fetchUsers, userSearch]);
+
+  useEffect(() => {
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    const socket = io(`${backendUrl}/sos`, { transports: ['polling', 'websocket'] });
+    socketRef.current = socket;
+    socket.on('sos:new', fetchSosEvents);
+    socket.on('sos:updated', fetchSosEvents);
+    socket.on('sos:batch_consolidated', fetchSosEvents);
+    socket.on('batch:pause_state_changed', (data: { isPaused: boolean }) => {
+      if (typeof data?.isPaused === 'boolean') {
+        setIsBatchPaused(data.isPaused);
+      }
+    });
+    return () => { socket.disconnect(); };
+  }, [fetchSosEvents]);
+
+  const selectedSos = useMemo(() => sosEvents.find(s => s.id === selectedSosId || s.rawId === selectedSosId) || null, [sosEvents, selectedSosId]);
+  const drawerSos = useMemo(() => sosEvents.find(s => s.id === drawerSosId || s.rawId === drawerSosId) || null, [sosEvents, drawerSosId]);
+
+  useEffect(() => {
+    if (drawerSos) fetchSosDetails(drawerSos);
+    else setSelectedSosDetails(null);
+  }, [drawerSosId, drawerSos, fetchSosDetails]);
+
+  const filteredSosList = useMemo(() => {
+    return sosEvents
+      .filter(event => {
+        if (activeSosTab === 'HISTORY' && event.status !== 'RESOLVED') return false;
+        if (activeSosTab !== 'HISTORY' && statusFilter !== 'ALL' && event.status !== statusFilter) return false;
+        if (searchQuery.trim() === '') return true;
+        const q = searchQuery.toLowerCase();
+        return event.userName.toLowerCase().includes(q) || event.id.toLowerCase().includes(q) || event.rawId.toLowerCase().includes(q) || event.location.toLowerCase().includes(q);
+      })
+      .sort((a, b) => {
+        if (sortOption === 'DATE_DESC') return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+        if (sortOption === 'DATE_ASC') return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
+        if (sortOption === 'STATUS') {
+          const priority: Record<string, number> = { ACTIVE: 1, ACKNOWLEDGED: 2, RESOLVED: 3 };
+          return (priority[a.status] || 9) - (priority[b.status] || 9);
+        }
+        return 0;
+      });
+  }, [sosEvents, searchQuery, sortOption, statusFilter, activeSosTab]);
+
+  const handleAcknowledgeSos = async (id: string) => {
+    const targetEvent = sosEvents.find(s => s.id === id || s.rawId === id);
+    if (!targetEvent) return;
+    setActionLoading(true);
+    try {
+      await api.put(`/api/sos/${targetEvent.rawId || targetEvent.id}/acknowledge`, {});
+      showToast(`SOS [${targetEvent.id}] status updated to ACKNOWLEDGED.`);
+      await fetchSosEvents();
+      if (selectedSosId) fetchSosDetails(targetEvent);
+    } catch (err: any) { showToast(err.message || 'Failed to acknowledge SOS', 'error'); }
+    finally { setActionLoading(false); }
+  };
+
+  const handleResolveSos = async (id: string) => {
+    const targetEvent = sosEvents.find(s => s.id === id || s.rawId === id);
+    if (!targetEvent) return;
+    setActionLoading(true);
+    try {
+      await api.put(`/api/sos/${targetEvent.rawId || targetEvent.id}/resolve`, {});
+      showToast(`SOS [${targetEvent.id}] has been marked RESOLVED.`, 'info');
+      await fetchSosEvents();
+      if (selectedSosId) fetchSosDetails(targetEvent);
+    } catch (err: any) { showToast(err.message || 'Failed to resolve SOS', 'error'); }
+    finally { setActionLoading(false); }
+  };
+
+  const handleAddNote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!noteInput.trim() || !selectedSosDetails) return;
+    setActionLoading(true);
+    try {
+      const res = await api.post<{ sos: any }>(`/api/sos/${selectedSosDetails.rawId || selectedSosDetails.id}/notes`, { text: noteInput.trim() });
+      setNoteInput('');
+      showToast('Tactical telemetry note appended successfully.');
+      if (res && res.sos) setSelectedSosDetails(mapSosFromBackend(res.sos));
+      fetchSosEvents();
+    } catch (err: any) { showToast(err.message || 'Failed to add note', 'error'); }
+    finally { setActionLoading(false); }
+  };
+
+  const handleAutoAssignNearestAdmin = async () => {
+    setActionLoading(true);
+    try {
+      const res = await api.post<{ message: string; assignedCount: number }>(
+        '/api/admin/sos/auto-assign',
+        { forceReassign: true }
+      );
+      showToast(res.message || 'Auto-assigned active SOS events to nearest admins!');
+      await fetchSosEvents();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to auto-assign nearest admin', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleOptimizeRoute = async () => {
+    setIsOptimizingRoute(true);
+    try {
+      const res = await api.post<any>('/api/admin/sos/optimize-route', {
+        adminId: currentUser?.id
+      });
+      if (res && res.optimizedRoute) {
+        setOptimizedRouteData(res);
+        if (res.optimizedRoute.length === 0) {
+          showToast('No active SOS signals assigned to you to optimize.', 'info');
+        } else {
+          showToast(`Computed optimal rescue route for ${res.optimizedRoute.length} SOS events!`);
+        }
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to compute optimal route', 'error');
+    } finally {
+      setIsOptimizingRoute(false);
+    }
+  };
+
+  const handleClearAllSos = async () => {
+    if (!window.confirm('Are you sure you want to delete all existing SOS signals from the database?')) return;
+    setActionLoading(true);
+    try {
+      const res = await api.del<{ message: string; deletedCount: number }>('/api/admin/sos/clear-all');
+      showToast(res.message || 'All SOS signals cleared!', 'info');
+      setSelectedSosId(null);
+      setDrawerSosId(null);
+      await fetchSosEvents();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to clear SOS signals', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleAssignAdmin = async (id: string, adminId: string | null) => {
+    const targetEvent = sosEvents.find(s => s.id === id || s.rawId === id);
+    if (!targetEvent) return;
+    setActionLoading(true);
+    try {
+      const res = await api.put<{ sos: any }>(`/api/sos/${targetEvent.rawId || targetEvent.id}/assign`, { adminId });
+      showToast(adminId ? `SOS [${targetEvent.id}] assigned to admin.` : `SOS [${targetEvent.id}] unassigned.`);
+      await fetchSosEvents();
+      if (res && res.sos) setSelectedSosDetails(mapSosFromBackend(res.sos));
+    } catch (err: any) {
+      showToast(err.message || 'Failed to assign admin', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleAssignSquad = async (id: string, squadId: string | null) => {
+    const targetEvent = sosEvents.find(s => s.id === id || s.rawId === id);
+    if (!targetEvent) return;
+    setActionLoading(true);
+    try {
+      const res = await api.put<{ message: string; sos: any }>(`/api/sos/${targetEvent.rawId || targetEvent.id}/assign-squad`, { squadId });
+      showToast(squadId ? `Tactical Squad [${squadId.replace('TEAM_', '').replace(/_/g, ' ')}] deployed and locked in Redis!` : `Squad unassigned for [${targetEvent.id}].`);
+      await fetchSosEvents();
+      if (res && res.sos) setSelectedSosDetails(mapSosFromBackend(res.sos));
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update squad assignment', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const [isBatchRunning, setIsBatchRunning] = useState(false);
+  const [isBatchPaused, setIsBatchPaused] = useState(false);
+  const [isBatchToggling, setIsBatchToggling] = useState(false);
+
+  const handleRunBatchDispatch = async () => {
+    setIsBatchRunning(true);
+    try {
+      const res = await api.post<{
+        success: boolean;
+        totalActive: number;
+        clustersProcessed: number;
+        acknowledgedCount: number;
+        message?: string;
+      }>('/api/admin/sos/batch-dispatch', {});
+
+      if (res && res.success) {
+        showToast(
+          res.acknowledgedCount > 0
+            ? `Consolidated ${res.totalActive} alerts into ${res.clustersProcessed} tactical cluster(s). All marked ACKNOWLEDGED with squads deployed!`
+            : res.message || 'Batch cycle complete: 0 active alerts awaiting dispatch.'
+        );
+        await fetchSosEvents();
+      } else {
+        showToast(res?.message || 'Batch dispatch encountered an error', 'error');
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to execute batch dispatch', 'error');
+    } finally {
+      setIsBatchRunning(false);
+    }
+  };
+
+  const handleTogglePauseBatch = async () => {
+    setIsBatchToggling(true);
+    try {
+      if (isBatchPaused) {
+        const res = await api.post<{ success: boolean; isPaused: boolean; message?: string }>(
+          '/api/admin/sos/batch-dispatch/resume',
+          {}
+        );
+        setIsBatchPaused(false);
+        showToast(res?.message || 'Autonomous 5-minute consolidation resumed.');
+      } else {
+        const res = await api.post<{ success: boolean; isPaused: boolean; message?: string }>(
+          '/api/admin/sos/batch-dispatch/pause',
+          {}
+        );
+        setIsBatchPaused(true);
+        showToast(res?.message || 'Autonomous 5-minute consolidation paused.', 'info');
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to toggle auto-consolidation state', 'error');
+    } finally {
+      setIsBatchToggling(false);
+    }
+  };
+
+  const handlePromoteAdmin = async (userEmail: string, userName: string) => {
+    try {
+      await api.post('/api/admin/admins', { email: userEmail });
+      showToast(`Promoted ${userName} to Authority Admin`);
+      fetchUsers(userSearch);
+    } catch (err: any) { showToast(err.message || 'Failed to promote admin', 'error'); }
+  };
+
+  const handleDemoteAdmin = async (userId: string, userName: string) => {
+    const targetUser = users.find(u => u.id === userId);
+    if (
+      currentUser &&
+      (userId === currentUser.id ||
+        (currentUser.email && targetUser?.email && targetUser.email.toLowerCase() === currentUser.email.toLowerCase()))
+    ) {
+      showToast('You cannot revoke your own admin status', 'error');
+      return;
+    }
+    try {
+      await api.del(`/api/admin/admins/${userId}`);
+      showToast(`Demoted ${userName} from Admin role`, 'info');
+      fetchUsers(userSearch);
+    } catch (err: any) { showToast(err.message || 'Failed to demote admin', 'error'); }
+  };
+
+  const formatTime = (isoString: string) => {
+    try {
+      return new Date(isoString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch { return '--:--'; }
+  };
+
+  const activeDrawerSos = useMemo(
+    () => drawerSos || selectedSosDetails || selectedSos,
+    [drawerSos, selectedSosDetails, selectedSos]
+  );
+  const activeSosCount = sosEvents.filter(e => e.status === 'ACTIVE').length;
+
+  return (
+    <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden p-2 sm:p-4 gap-2 sm:gap-4 bg-canvas text-primaryText font-sans transition-colors duration-200">
+
+      {/* Toast Notification Container */}
+      {toast && (
+        <div className="fixed top-4 md:top-5 left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 md:right-6 z-50 flex items-center gap-3 bg-surface border border-hairline shadow-xl px-4 py-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-medium w-[90%] md:w-auto animate-fade-in text-primaryText">
+          <span className={`w-2.5 h-2.5 rounded-full ${toast.type === 'error' ? 'bg-red-500' : 'bg-brandTeal'}`}></span>
+          <span>{toast.message}</span>
+        </div>
+      )}
+
+        {/* UPPER: Geo-Spatial Map Canvas */}
+        <MapCanvas
+          showHeadquarters={false}
+          activeSosCount={activeSosCount}
+          systemStats={systemStats}
+          sosEvents={sosEvents.filter(e => e.status === 'ACTIVE' || e.status === 'ACKNOWLEDGED')}
+          headquarters={hqs}
+          selectedSosId={selectedSosId}
+          selectedHqId={selectedHqId}
+          optimizedRouteData={optimizedRouteData}
+          detourMode={detourMode}
+          detourOrigin={detourOrigin}
+          detourDest={detourDest}
+          detourResult={detourResult}
+          isDetourLoading={isDetourLoading}
+          onToggleDetour={handleToggleDetourMode}
+          onDetourMapClick={handleDetourMapClick}
+          onMarkerClick={(id) => { setSelectedSosId(id); setSelectedHqId(null); }}
+          onHqMarkerClick={(id) => { setSelectedHqId(id); setSelectedSosId(null); }}
+          onMarkerDoubleClick={(id) => {
+            const target = sosEvents.find(s => s.id === id || s.rawId === id);
+            setSelectedSosId(id);
+            router.push(`/admin/sos/${target?.rawId || id}`);
+          }}
+          onOpenDetails={(id) => {
+            const target = sosEvents.find(s => s.id === id || s.rawId === id);
+            setSelectedSosId(id);
+            router.push(`/admin/sos/${target?.rawId || id}`);
+          }}
+          onClosePreview={() => { setSelectedSosId(null); setSelectedHqId(null); }}
+          onOpenCrisisCommand={() => setIsCrisisCommandOpen(true)}
+        />
+
+        {/* LOWER: Emergency SOS Feed Console */}
+        <section className="flex-1 flex flex-col bg-surface border border-hairline rounded-xl sm:rounded-2xl overflow-hidden shadow-sm min-h-[300px]">
+
+          {/* Console Header Bar */}
+          <div className="p-3 sm:p-3.5 border-b border-hairline bg-surface flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4 flex-shrink-0">
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+              <div className="flex items-center gap-2">
+                <Shield className="w-4 h-4 text-red-500" />
+                <h2 className="font-bold text-xs sm:text-sm text-primaryText font-display">SOS Console</h2>
+              </div>
+              <span className="hidden sm:inline-block text-[10px] font-mono px-2 py-0.5 rounded bg-surfaceElevated text-mutedGray border border-hairline">
+                GET /api/admin/sos
+              </span>
+              <span className="text-[10px] sm:text-xs font-semibold text-brandTeal bg-brandTeal/10 border border-brandTeal/20 px-2 py-0.5 rounded-full font-mono">
+                {filteredSosList.length} Events
+              </span>
+            </div>
+
+            {/* Controls */}
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <div className="flex rounded-lg bg-surfaceElevated p-1 border border-hairline text-[10px] sm:text-xs font-medium">
+                <button
+                  onClick={() => { setActiveSosTab('FEED'); setStatusFilter('ALL'); }}
+                  className={`px-2 sm:px-3 py-1 rounded-md text-center transition-all ${activeSosTab === 'FEED' ? 'bg-surfaceCard text-primaryText font-semibold shadow-sm border border-hairline' : 'text-mutedGray hover:text-primaryText'
+                    }`}
+                >
+                  Active Feed
+                </button>
+                <button
+                  onClick={() => setActiveSosTab('HISTORY')}
+                  className={`px-2 sm:px-3 py-1 rounded-md text-center transition-all ${activeSosTab === 'HISTORY' ? 'bg-surfaceCard text-primaryText font-semibold shadow-sm border border-hairline' : 'text-mutedGray hover:text-primaryText'
+                    }`}
+                >
+                  History
+                </button>
+              </div>
+
+              <div className="relative flex-1 min-w-[140px] sm:w-56">
+                <Search className="w-3.5 h-3.5 text-mutedGray absolute left-2.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder="Search..."
+                  className="w-full bg-surfaceElevated border border-hairline rounded-lg pl-8 pr-6 py-1 text-[11px] sm:text-xs text-primaryText placeholder-mutedGray focus:outline-none focus:border-brandTeal focus:ring-1 focus:ring-brandTeal/30"
+                />
+              </div>
+
+              {activeSosTab === 'FEED' && (
+                <div className="hidden sm:flex items-center gap-1">
+                  <button
+                    onClick={() => setStatusFilter('ALL')}
+                    className={`px-2 py-0.5 rounded text-[11px] font-medium border transition-colors ${statusFilter === 'ALL' ? 'bg-brandTeal/10 text-brandTeal border-brandTeal/20 font-semibold' : 'bg-surfaceElevated text-mutedGray border-hairline'
+                      }`}
+                  >
+                    All
+                  </button>
+                  <button
+                    onClick={() => setStatusFilter('ACTIVE')}
+                    className={`px-2 py-0.5 rounded text-[11px] font-medium border transition-colors ${statusFilter === 'ACTIVE' ? 'bg-red-500/10 text-red-500 border-red-500/20 font-semibold' : 'bg-surfaceElevated text-mutedGray border-hairline'
+                      }`}
+                  >
+                    Active
+                  </button>
+                </div>
+              )}
+
+              {/* ⚡ Autonomous Predictive Crisis Command Button */}
+              <button
+                onClick={() => setIsCrisisCommandOpen(true)}
+                title="Open Autonomous Predictive Crisis Command Center (AWS Strands)"
+                className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold bg-gradient-to-r from-teal-500/20 via-brandTeal/30 to-emerald-500/20 text-brandTeal border border-brandTeal/50 hover:border-brandTeal hover:shadow-glow-teal transition-all shadow-sm"
+              >
+                <Zap className="w-3.5 h-3.5 text-brandTeal animate-pulse" />
+                <span className="hidden sm:inline">Predictive Command</span>
+                <span className="sm:hidden">Command</span>
+                <span className="hidden md:inline-block text-[9px] bg-brandTeal/20 text-brandTeal px-1 rounded font-mono">
+                  AWS STRANDS
+                </span>
+              </button>
+
+              {/* ⚡ Manual Consolidation & Tactical Batch Dispatch Button */}
+              <button
+                onClick={handleRunBatchDispatch}
+                disabled={isBatchRunning || actionLoading}
+                title="Manual Consolidate: Immediately scans all active SOS beacons, clusters nearby alerts into shared incident zones, contextualizes root causes, and assigns tactical teams."
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-gradient-to-r from-cyan-500/20 via-sky-500/20 to-teal-500/20 text-cyan-300 border border-cyan-400/50 hover:border-cyan-300 hover:shadow-glow-teal transition-all shadow-sm disabled:opacity-50"
+              >
+                {isBatchRunning ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-cyan-400" />
+                ) : (
+                  <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
+                )}
+                <span className="hidden sm:inline">Manual Consolidate</span>
+                <span className="sm:hidden">Consolidate</span>
+                <span className="text-[9px] bg-cyan-500/30 text-cyan-200 px-1 py-0.5 rounded font-mono font-bold">
+                  ON-DEMAND
+                </span>
+              </button>
+
+              {/* ⏯️ Pause / Resume Auto 5-Min Consolidation Engine */}
+              <button
+                onClick={handleTogglePauseBatch}
+                disabled={isBatchToggling || actionLoading}
+                title={
+                  isBatchPaused
+                    ? 'Autonomous 5-minute consolidation is currently PAUSED. Click to Resume right now.'
+                    : 'Autonomous 5-minute consolidation is ACTIVE (runs every 5m). Click to Pause right now.'
+                }
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all shadow-sm disabled:opacity-50 ${
+                  isBatchPaused
+                    ? 'bg-amber-500/15 text-amber-300 border-amber-400/50 hover:bg-amber-500/25 hover:border-amber-300 hover:shadow-glow-amber'
+                    : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/20 hover:border-emerald-400 hover:shadow-glow-teal'
+                }`}
+              >
+                {isBatchToggling ? (
+                  <Loader2 className={`w-3.5 h-3.5 animate-spin ${isBatchPaused ? 'text-amber-400' : 'text-emerald-400'}`} />
+                ) : isBatchPaused ? (
+                  <Play className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                ) : (
+                  <Pause className="w-3.5 h-3.5 text-emerald-400 fill-emerald-400" />
+                )}
+                <span className="hidden sm:inline">
+                  {isBatchPaused ? 'Resume Auto (5m)' : 'Pause Auto (5m)'}
+                </span>
+                <span className="sm:hidden">
+                  {isBatchPaused ? 'Resume' : 'Pause'}
+                </span>
+                <span
+                  className={`text-[9px] px-1 py-0.5 rounded font-mono font-bold ${
+                    isBatchPaused
+                      ? 'bg-amber-500/30 text-amber-200 animate-pulse'
+                      : 'bg-emerald-500/20 text-emerald-300'
+                  }`}
+                >
+                  {isBatchPaused ? 'PAUSED' : 'ACTIVE'}
+                </span>
+              </button>
+
+              <button
+                onClick={handleAutoAssignNearestAdmin}
+                disabled={actionLoading}
+                title="Calculate proximity and assign active SOS events to nearest admin responders"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-brandTeal/10 text-brandTeal border border-brandTeal/20 hover:bg-brandTeal/20 transition-colors shadow-sm disabled:opacity-50"
+              >
+                {actionLoading ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-brandTeal" />
+                ) : (
+                  <Compass className="w-3.5 h-3.5 text-brandTeal" />
+                )}
+                <span className="hidden sm:inline">Auto-Assign Nearest</span>
+                <span className="sm:hidden">Auto-Assign</span>
+              </button>
+
+              <button
+                onClick={handleOptimizeRoute}
+                disabled={isOptimizingRoute || actionLoading}
+                title="Compute optimal multi-factor rescue route based on battery, urgency, and distance"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors shadow-sm disabled:opacity-50"
+              >
+                {isOptimizingRoute ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-400" />
+                ) : (
+                  <Route className="w-3.5 h-3.5 text-emerald-400" />
+                )}
+                <span className="hidden sm:inline">Optimize Route</span>
+                <span className="sm:hidden">Route</span>
+              </button>
+
+              <button
+                onClick={handleClearAllSos}
+                disabled={actionLoading}
+                title="Temporary action: Delete all existing SOS signals from database"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 transition-colors shadow-sm disabled:opacity-50"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                <span className="hidden sm:inline">Clear All SOS (Temp)</span>
+                <span className="sm:hidden">Clear All</span>
+              </button>
+
+              <button
+                onClick={() => router.push('/admin/headquarters')}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-surfaceElevated text-primaryText border border-hairline hover:bg-surfaceCard transition-colors shadow-sm"
+              >
+                <Building2 className="w-3.5 h-3.5 text-brandTeal" />
+                <span className="hidden sm:inline">Headquarters</span>
+                <span className="sm:hidden">HQs</span>
+              </button>
+
+              <button
+                onClick={() => setIsUserManagementOpen(true)}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-surfaceElevated text-primaryText border border-hairline hover:bg-surfaceCard transition-colors shadow-sm ml-auto sm:ml-0"
+              >
+                <Users className="w-3.5 h-3.5 text-brandTeal" />
+                <span className="hidden sm:inline">Nodes & Users</span>
+                <span className="sm:hidden">Users</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Tactical Rescue Route Matrix Overlay */}
+          {optimizedRouteData && optimizedRouteData.optimizedRoute && optimizedRouteData.optimizedRoute.length > 0 && (
+            <div className="mx-3 sm:mx-4 mt-3 p-3.5 bg-surfaceElevated border border-emerald-500/30 rounded-xl shadow-lg animate-fade-in space-y-3">
+              <div className="flex items-center justify-between gap-2 border-b border-hairline pb-2.5">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-glow-teal">
+                    <Navigation className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs sm:text-sm font-bold text-primaryText flex items-center gap-2">
+                      Optimal Rescue Route Matrix
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
+                        {optimizedRouteData.totalWaypoints} Waypoints
+                      </span>
+                    </h3>
+                    <p className="text-[11px] text-mutedGray mt-0.5">
+                      Origin: <span className="font-semibold text-primaryText">{optimizedRouteData.origin?.name}</span> • Total Distance: <span className="font-mono text-emerald-400 font-semibold">{optimizedRouteData.totalDistanceKm} km</span> • Est. Duration: <span className="font-mono text-emerald-400 font-semibold">{optimizedRouteData.totalEstimatedMinutes} min</span>
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setOptimizedRouteData(null)}
+                  className="px-2.5 py-1 rounded-lg bg-surfaceCard hover:bg-surface border border-hairline text-mutedGray hover:text-primaryText text-xs flex items-center gap-1 font-medium transition-colors"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  Close Route
+                </button>
+              </div>
+
+              {/* Waypoints Sequence List */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-56 overflow-y-auto pr-1">
+                {optimizedRouteData.optimizedRoute.map((step: any) => (
+                  <div
+                    key={step.step}
+                    onClick={() => {
+                      const target = sosEvents.find(s => s.id === step.sosId || s.rawId === step.sosId);
+                      setSelectedSosId(step.sosId);
+                      router.push(`/admin/sos/${target?.rawId || step.sosId}`);
+                    }}
+                    className="p-2.5 bg-surfaceCard hover:bg-surface border border-hairline rounded-lg cursor-pointer transition-colors space-y-1.5 group"
+                  >
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="w-5 h-5 rounded-full bg-emerald-500 text-canvas font-bold text-[11px] flex items-center justify-center shadow-sm font-mono">
+                        {step.step}
+                      </span>
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded font-mono ${
+                        step.category === 'MEDICAL' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
+                        step.category === 'TRAPPED' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
+                        'bg-brandTeal/20 text-brandTeal border border-brandTeal/30'
+                      }`}>
+                        {step.category}
+                      </span>
+                    </div>
+
+                    <div className="text-xs font-semibold text-primaryText group-hover:text-brandTeal transition-colors line-clamp-1">
+                      {step.message || `Emergency Ping #${step.step}`}
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11px] text-mutedGray font-mono pt-1 border-t border-hairline">
+                      <span>+{step.distanceFromPrevKm} km ({step.estTravelTimeMin}m)</span>
+                      <span className="text-amber-400 flex items-center gap-1 font-semibold">
+                        <Zap className="w-3 h-3" /> {step.batteryPercentage !== null ? `${step.batteryPercentage}%` : 'N/A'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Scrollable SOS Grid Panel */}
+          <div className="flex-1 overflow-y-auto p-2 sm:p-3.5 bg-canvas">
+            {isSosLoading ? (
+              <div className="h-full flex flex-col items-center justify-center text-center p-6 text-mutedGray gap-2">
+                <Loader2 className="w-6 h-6 sm:w-8 sm:h-8 text-brandTeal animate-spin" />
+                <p className="text-[11px] sm:text-xs font-semibold text-primaryText">Loading SOS Telemetry Feed...</p>
+              </div>
+            ) : filteredSosList.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-center p-6 text-mutedGray">
+                <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-hairlineBright mb-2" />
+                <p className="text-[11px] sm:text-xs font-semibold text-primaryText">No SOS events found</p>
+                <p className="text-[10px] sm:text-[11px] mt-0.5">
+                  {searchQuery ? 'Try refining your search filter.' : 'All emergency alerts are currently quiet.'}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-2 sm:gap-3">
+                {filteredSosList.map(sos => {
+                  const isSelected = selectedSosId === sos.id || selectedSosId === sos.rawId;
+                  const isAuthority = sos.role === 'AUTHORITY';
+                  const isEmergencyActive = sos.status === 'ACTIVE';
+
+                  return (
+                    <div
+                      key={sos.rawId || sos.id}
+                      onClick={() => setSelectedSosId(sos.id)}
+                      onDoubleClick={() => { setSelectedSosId(sos.id); router.push(`/admin/sos/${sos.id}`); }}
+                      className={`p-3 sm:p-3.5 rounded-xl sm:rounded-2xl transition-all cursor-pointer text-left relative flex flex-col justify-between shadow-sm ${isAuthority
+                        ? 'bg-brandTeal/5 hover:bg-brandTeal/10 border border-brandTeal/20'
+                        : 'bg-surfaceCard hover:bg-surfaceElevated border border-hairline'
+                        } ${isSelected ? 'ring-2 ring-brandTeal border-brandTeal' : ''}`}
+                    >
+                      <div>
+                        {/* Status chip & SOS Identifier */}
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className={`inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider font-mono border ${isEmergencyActive
+                                ? 'bg-red-500/10 text-red-500 border-red-500/20 animate-pulse'
+                                : sos.status === 'ACKNOWLEDGED'
+                                  ? 'bg-brandTeal/10 text-brandTeal border-brandTeal/20'
+                                  : 'bg-surfaceElevated text-mutedGray border-hairline'
+                                }`}
+                            >
+                              <span className={`w-1.5 h-1.5 rounded-full ${isEmergencyActive ? 'bg-red-500' : sos.status === 'ACKNOWLEDGED' ? 'bg-brandTeal' : 'bg-mutedGray'}`}></span>
+                              {sos.status}
+                            </span>
+                            <span className="font-mono text-[9px] sm:text-[10px] text-mutedGray font-medium">
+                              #{sos.id}
+                            </span>
+                          </div>
+                          <span className="text-[9px] sm:text-[10px] text-mutedGray font-mono">
+                            {formatTime(sos.timestamp)}
+                          </span>
+                        </div>
+
+                        {/* Node Info */}
+                        <div className="flex items-start gap-2.5">
+                          <div
+                            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold border ${isAuthority
+                              ? 'bg-brandTeal/10 text-brandTeal border-brandTeal/20'
+                              : 'bg-surfaceElevated text-secondaryText border-hairline'
+                              }`}
+                          >
+                            {isAuthority ? <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-brandTeal" /> : <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-mutedGray" />}
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-[11px] sm:text-xs font-bold text-primaryText truncate">{sos.userName}</h4>
+                            <span className={`text-[8px] sm:text-[9px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded font-mono inline-block mt-0.5 border ${isAuthority ? 'text-brandTeal bg-brandTeal/10 border-brandTeal/20' : 'text-mutedGray bg-surfaceElevated border-hairline'
+                              }`}
+                            >
+                              {isAuthority ? 'Authority Node' : 'Regular Node'}
+                            </span>
+                            <p className="text-[10px] sm:text-[11px] text-mutedGray truncate mt-1">{sos.location}</p>
+
+                            {/* Tactical Squad Tag Badge */}
+                            <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+                              {sos.assignedSquad ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-bold font-mono bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+                                  <Shield className="w-2.5 h-2.5 text-cyan-400" />
+                                  <span>{sos.assignedSquad.replace('TEAM_', '').replace(/_/g, ' ')}</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-bold font-mono bg-surfaceElevated text-mutedGray border border-hairline">
+                                  <span>Squad: Standby</span>
+                                </span>
+                              )}
+                              {typeof sos.waterDepthCm === 'number' && sos.waterDepthCm > 0 && (
+                                <span className="text-[9px] font-mono text-cyan-400 font-semibold">
+                                  💧 {sos.waterDepthCm}cm
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-2.5 pt-2 border-t border-hairline flex items-center justify-between text-[9px] sm:text-[10px] text-mutedGray">
+                        <span className="flex items-center gap-1 font-mono text-mutedGray">
+                          <Battery className="w-3 h-3 text-brandTeal" />
+                          {sos.batteryLevel}
+                        </span>
+                        <span className="flex items-center gap-1 font-mono text-mutedGray">
+                          <Radio className="w-3 h-3 text-brandTeal" />
+                          {sos.peerNodesInRange} Peered
+                        </span>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setSelectedSosId(sos.id); router.push(`/admin/sos/${sos.id}`); }}
+                          className="text-brandTeal font-medium flex items-center gap-0.5 hover:underline"
+                        >
+                          Details <ChevronRight className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </section>
+
+      {/* ================= 3 & 4. Action Drawers & Modals ================= */}
+      {drawerSosId && (
+        <SosDrawer
+          sos={activeDrawerSos}
+          isLoadingDetails={drawerLoading}
+          actionLoading={actionLoading}
+          noteInput={noteInput}
+          admins={users.filter(u => u.role === 'ADMIN')}
+          currentUserId={currentUser?.id}
+          onSetNoteInput={setNoteInput}
+          onClose={() => { setDrawerSosId(null); setSelectedSosDetails(null); }}
+          onAcknowledge={handleAcknowledgeSos}
+          onResolve={handleResolveSos}
+          onAddNote={handleAddNote}
+          onAssignAdmin={handleAssignAdmin}
+          onAutoAssignNearest={handleAutoAssignNearestAdmin}
+          onAssignSquad={handleAssignSquad}
+          onManualConsolidate={handleRunBatchDispatch}
+          isBatchPaused={isBatchPaused}
+          onTogglePauseBatch={handleTogglePauseBatch}
+          formatTime={formatTime}
+        />
+      )}
+
+      <UserManagementModal
+        isOpen={isUserManagementOpen}
+        userSearch={userSearch}
+        users={users}
+        isLoading={isUsersLoading}
+        onClose={handleCloseUserManagement}
+        onUserSearchChange={setUserSearch}
+        onPromoteAdmin={handlePromoteAdmin}
+        onDemoteAdmin={handleDemoteAdmin}
+        currentUserId={currentUser?.id}
+        currentUserEmail={currentUser?.email}
+      />
+
+      <CrisisCommandModal
+        isOpen={isCrisisCommandOpen}
+        onClose={() => setIsCrisisCommandOpen(false)}
+        selectedSosId={selectedSosId}
+        onShowToast={(msg, type) => showToast(msg, type)}
+      />
+    </div>
+  );
+}
+
+export default function AdminDashboardPage() {
+  return (
+    <Suspense>
+      <AdminDashboardContent />
+    </Suspense>
+  );
+}

@@ -27,7 +27,7 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField("String", "BASE_URL", "\"https://zerogridweb.onrender.com/\"")
+        buildConfigField("String", "BASE_URL", "\"https://zero-grid-l28u.onrender.com/\"")
         resValue("string", "google_maps_key", mapsApiKey)
         externalNativeBuild {
             cmake {
@@ -36,13 +36,22 @@ android {
         }
     }
 
+    packaging {
+        resources {
+            excludes += setOf(
+                "**/gridZeroExpress/**",
+                "gridZeroExpress/**"
+            )
+        }
+    }
+
     buildTypes {
         debug {
             // Set default base URL for debug (Render live backend; can switch to "http://10.0.2.2:5000/" for local emulator)
-            buildConfigField("String", "BASE_URL", "\"https://zerogridweb.onrender.com/\"")
+            buildConfigField("String", "BASE_URL", "\"https://zero-grid-l28u.onrender.com/\"")
         }
         release {
-            buildConfigField("String", "BASE_URL", "\"https://zerogridweb.onrender.com/\"")
+            buildConfigField("String", "BASE_URL", "\"https://zero-grid-l28u.onrender.com/\"")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
