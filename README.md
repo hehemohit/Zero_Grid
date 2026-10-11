@@ -18,7 +18,7 @@
 
 ZeroGrid is a **hardware-first, agentic crisis response system**: Native Android P2P Radio Mesh + Dynamic Flood Route Copilot + Autonomous Multi-Agent Engine (**AgentZero** powered by **Strands Agents SDK** and **Amazon Bedrock**) — built to **ship on AWS**.
 
-**Architecture Blueprint**: [aws_architecture_final.jpg](file:///C:/Users/ACER/.gemini/antigravity-ide/brain/230e08d2-b887-4e64-9883-849acbcc94b7/aws_architecture_strands_1791639732883.jpg) · **Mobile Core**: [mobile application working core.md](file:///c:/Users/ACER/AndroidStudioProjects/gridzero/mobile%20application%20working%20core.md) · **Cloud Infrastructure**: [WebCloudFunction.md](file:///c:/Users/ACER/AndroidStudioProjects/gridzero/WebCloudFunction.md) · **Packet Wire Specs**: [packet_structure_diagrams.md](file:///c:/Users/ACER/AndroidStudioProjects/gridzero/gridZeroExpress/packet_structure_diagrams.md) · **RSSI Radar Tracking**: [rssiTracking.md](file:///c:/Users/ACER/AndroidStudioProjects/gridzero/rssiTracking.md)
+**Architecture Blueprint**: [aws_architecture_final.jpg](file:///C:/Users/ACER/.gemini/antigravity-ide/brain/230e08d2-b887-4e64-9883-849acbcc94b7/aws_architecture_strands_1791639732883.jpg) · **Mobile Core**: [mobile application working core.md](file:///c:/Users/ACER/AndroidStudioProjects/gridzero/docs/mobile%20application%20working%20core.md) · **Cloud Infrastructure**: [WebCloudFunction.md](file:///c:/Users/ACER/AndroidStudioProjects/gridzero/docs/WebCloudFunction.md) · **Packet Wire Specs**: [packet_structure_diagrams.md](file:///c:/Users/ACER/AndroidStudioProjects/gridzero/gridZeroExpress/packet_structure_diagrams.md) · **RSSI Radar Tracking**: [rssiTracking.md](file:///c:/Users/ACER/AndroidStudioProjects/gridzero/docs/rssiTracking.md)
 
 ---
 
@@ -342,10 +342,17 @@ gridzero/ (Repository Workspace Root)
 │   │
 │   └── postman/                            # Automated Postman test suites
 │
-├── mobile application working core.md      # Comprehensive Android architecture deep-dive
-├── packet_structure_diagrams.md            # Byte-level RF frame and packet specifications
-├── WebCloudFunction.md                     # Circular multi-agent & electrical grid reference
-└── docker-compose.yml                      # Local development multi-container orchestration
+├── docs/                                   # Architectural specifications & technical deep-dives
+│   ├── mobile application working core.md  # Comprehensive Android architecture deep-dive
+│   ├── WebCloudFunction.md                 # Circular multi-agent & electrical grid reference
+│   ├── BACKEND_INTEGRATION_GUIDE.md        # Android to Express integration contract
+│   ├── Detailed_Project_context.md         # Comprehensive end-to-end domain blueprint
+│   ├── compassLogic.md                     # Magnetometer radar canvas calculations
+│   ├── rssiTracking.md                     # BLE signal strength distance trilateration
+│   ├── uiOptimization.md                   # 60 FPS Compose rendering optimizations
+│   ├── TrackDevice.md                      # Rescuer coordinate beacon telemetry
+│   └── webappupdates.md                    # Platform milestones and change logs
+└── README.md                               # Root project documentation & operational guide
 ```
 
 ---
@@ -358,7 +365,7 @@ gridzero/ (Repository Workspace Root)
 [![BLE Mesh](https://img.shields.io/badge/Mesh-Bluetooth%205.0%20BLE-0078D7?style=flat&logo=bluetooth&logoColor=white)](https://github.com/hehemohit/Zero_Grid)
 [![Wi-Fi Direct](https://img.shields.io/badge/Mesh-Wi--Fi%20Direct%20P2P-1DA1F2?style=flat&logo=wi-fi&logoColor=white)](https://github.com/hehemohit/Zero_Grid)
 
-> 📘 **Detailed Architectural Deep-Dive**: For raw implementation code, see [mobile application working core.md](file:///c:/Users/ACER/AndroidStudioProjects/gridzero/mobile%20application%20working%20core.md).
+> 📘 **Detailed Architectural Deep-Dive**: For raw implementation code, see [mobile application working core.md](file:///c:/Users/ACER/AndroidStudioProjects/gridzero/docs/mobile%20application%20working%20core.md).
 
 Built entirely in **Kotlin** and **Jetpack Compose (Material 3)**, targeting Android 8.0+ (API 26 to 35).
 
