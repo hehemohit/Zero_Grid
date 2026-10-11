@@ -33,4 +33,3 @@ __pycache__/
 *.pyc
 .venv/
 env/
-run_timed_commits.ps1

@@ -1,0 +1,64 @@
+services:
+  # MongoDB Atlas / Local Replica / 2dsphere Geospatial Engine
+  mongo:
+    image: mongo:7.0
+    container_name: zerogrid-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: zerogrid
+    volumes:
+      - mongo_data:/data/db
+
+  # Redis Redlock / Mutex Queue
+  redis:
+    image: redis:7.2-alpine
+    container_name: zerogrid-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  # Express Backend (AgentZero, SOS Dispatch, Socket.IO)
+  backend:
+    build:
+      context: ./gridZeroExpress/backend
+      dockerfile: Dockerfile
+    container_name: zerogrid-backend
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      PORT: 5000
+      NODE_ENV: development
+      MONGODB_URI: mongodb://mongo:27017/zerogrid
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: dev_zerogrid_super_secret_jwt_key_2026
+      JWT_EXPIRES_IN: 7d
+      ALLOWED_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
+    depends_on:
+      - mongo
+      - redis
+
+  # Next.js Command Center Web App
+  frontend:
+    build:
+      context: ./gridZeroExpress/frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:5000
+    container_name: zerogrid-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      NEXT_PUBLIC_API_URL: http://localhost:5000
+    depends_on:
+      - backend
+
+volumes:
+  mongo_data:
+  redis_data:

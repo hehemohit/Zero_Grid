@@ -18,7 +18,7 @@
 
 ZeroGrid is a **hardware-first, agentic crisis response system**: Native Android P2P Radio Mesh + Dynamic Flood Route Copilot + Autonomous Multi-Agent Engine (**AgentZero** powered by **Strands Agents SDK** and **Amazon Bedrock**) — built to **ship on AWS**.
 
-**Architecture Blueprint**: [aws_architecture_final.jpg](file:///C:/Users/ACER/.gemini/antigravity-ide/brain/230e08d2-b887-4e64-9883-849acbcc94b7/aws_architecture_strands_1791639732883.jpg) · **Mobile Core**: [mobile application working core.md](file:///c:/Users/ACER/AndroidStudioProjects/gridzero/docs/mobile%20application%20working%20core.md) · **Cloud Infrastructure**: [WebCloudFunction.md](file:///c:/Users/ACER/AndroidStudioProjects/gridzero/docs/WebCloudFunction.md) · **Packet Wire Specs**: [packet_structure_diagrams.md](file:///c:/Users/ACER/AndroidStudioProjects/gridzero/gridZeroExpress/packet_structure_diagrams.md) · **RSSI Radar Tracking**: [rssiTracking.md](file:///c:/Users/ACER/AndroidStudioProjects/gridzero/docs/rssiTracking.md)
+**Architecture Blueprint**: [aws_architecture_final.jpg](file:///C:/Users/ACER/.gemini/antigravity-ide/brain/230e08d2-b887-4e64-9883-849acbcc94b7/aws_architecture_strands_1791639732883.jpg) · **Run & Deployment Guide**: [RUN_GUIDE.md](file:///c:/Users/ACER/AndroidStudioProjects/gridzero/docs/RUN_GUIDE.md) · **Mobile Core**: [mobile application working core.md](file:///c:/Users/ACER/AndroidStudioProjects/gridzero/docs/mobile%20application%20working%20core.md) · **Cloud Infrastructure**: [WebCloudFunction.md](file:///c:/Users/ACER/AndroidStudioProjects/gridzero/docs/WebCloudFunction.md) · **Packet Wire Specs**: [packet_structure_diagrams.md](file:///c:/Users/ACER/AndroidStudioProjects/gridzero/gridZeroExpress/packet_structure_diagrams.md) · **RSSI Radar Tracking**: [rssiTracking.md](file:///c:/Users/ACER/AndroidStudioProjects/gridzero/docs/rssiTracking.md)
 
 ---
 
@@ -845,26 +845,35 @@ sequenceDiagram
 
 ---
 
-## 7. Quickstart & Local Multi-Container Development
+## 7. Quickstart, Docker & Run Guides
 
-### 7.1 Start Local Databases (`docker-compose.yml`)
+> [!TIP]
+> For a step-by-step walkthrough on building the Android APK, testing off-grid mesh hops, containerizing with Docker, or deploying to the cloud, consult the canonical [docs/RUN_GUIDE.md](file:///c:/Users/ACER/AndroidStudioProjects/gridzero/docs/RUN_GUIDE.md).
+
+### 7.1 Single-Command Docker Orchestration (`docker-compose.yml`) — Strictly for Local Testing
+
+Run the full local platform *(strictly for local development and offline testing)* (MongoDB 7.0 + Redis 7.2 + Express Backend + Next.js 16 Web Dashboard):
 
 ```bash
-docker-compose up -d
+docker compose up --build -d
 ```
-*(Starts local MongoDB 7.0 with 2dsphere support and Redis 7.2 on port 6379).*
+* MongoDB: `localhost:27017`
+* Redis Redlock: `localhost:6379`
+* Backend API & WebSockets: `http://localhost:5000` (Health check: `/health`)
+* Frontend Command Dashboard: `http://localhost:3000`
 
-### 7.2 Run Core Backend (`gridZeroExpress/backend`)
+### 7.2 Run Core Backend Manually (`gridZeroExpress/backend`)
 
 ```bash
 cd gridZeroExpress/backend
 npm install
 npm run dev
 ```
-* Health Check: `http://localhost:5000/health`
-* WebSocket Ingress: `ws://localhost:5000/sos`
+* Local Health Check: `http://localhost:5000/health`
+* Live Hosted Backend (Render): `https://zero-grid-l28u.onrender.com/health`
+* WebSocket Ingress: `ws://localhost:5000/sos` (or `wss://zero-grid-l28u.onrender.com/sos`)
 
-### 7.3 Run Command Center Web (`gridZeroExpress/frontend`)
+### 7.3 Run Command Center Web Manually (`gridZeroExpress/frontend`)
 
 ```bash
 cd gridZeroExpress/frontend
@@ -873,19 +882,27 @@ npm run dev
 ```
 * Dashboard URL: `http://localhost:3000`
 
-### 7.4 Run Native Android App (`app/`)
+### 7.4 Run Mobile Client (Android APK)
 
+> [!TIP]
+> **Recommended**: To quickly evaluate or deploy to an emergency responder device, download and sideload the **[latest pre-built APK release](https://github.com/hehemohit/Zero_Grid/releases)** directly (or locate the local build artifact at `app/build/outputs/apk/debug/app-debug.apk`). It connects out-of-the-box to the live hosted service.
+
+**For local building from source:**
 1. Open repository root in Android Studio (Ladybug / Meerkat).
 2. Configure `local.properties`:
    ```properties
-   sdk.dir=C:\\Users\\ACER\\AppData\\Local\\Android\\Sdk
+   sdk.dir=C:\\Users\\<USER>\\AppData\\Local\\Android\\Sdk
    MAPS_API_KEY=AIzaSy...
    ```
-3. Set target backend in `app/src/main/java/com/example/zerogrid/network/ApiConstants.kt`:
-   ```kotlin
-   const val BASE_URL = "https://d111111abcdef8.cloudfront.net/"
+3. Build APK via CLI:
+   ```powershell
+   .\gradlew.bat assembleDebug
    ```
-4. Build and deploy to physical Android device (Android 8.0+ / API 26–35).
+   Output: `app/build/outputs/apk/debug/app-debug.apk`
+4. Install on device:
+   ```bash
+   adb install -r app/build/outputs/apk/debug/app-debug.apk
+   ```
 
 ---
 
