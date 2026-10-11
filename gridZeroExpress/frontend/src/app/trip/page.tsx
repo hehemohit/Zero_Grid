@@ -67,8 +67,8 @@ export default function TripWalkthroughPage() {
               <div>
                 <div className="flex items-center gap-2">
                   <span className="font-display font-bold text-lg text-emerald-950 tracking-tight">ZeroGrid</span>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                    PROJECT TRIP
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-800 border border-red-300">
+                    PROJECT TOUR
                   </span>
                 </div>
                 <div className="text-[10px] font-mono text-slate-500 -mt-0.5">
@@ -327,7 +327,7 @@ export default function TripWalkthroughPage() {
                 href="/"
                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-emerald-950 text-xs font-bold uppercase tracking-wider transition-all shadow-md shrink-0 self-start sm:self-auto"
               >
-                <span>FINISH TRIP &amp; RETURN HOME</span>
+                <span>FINISH TOUR &amp; RETURN HOME</span>
                 <span className="material-symbols-outlined text-sm">check_circle</span>
               </Link>
             </div>

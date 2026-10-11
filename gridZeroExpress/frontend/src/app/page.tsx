@@ -92,9 +92,9 @@ export default function LandingPage() {
 
           {/* Navigation Links */}
           <nav className="hidden md:flex items-center gap-1 lg:gap-2 text-xs font-semibold text-slate-600 whitespace-nowrap">
-            <Link className="px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 font-bold hover:bg-emerald-100 transition-all flex items-center gap-1.5 border border-emerald-200 mr-1" href="/trip">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
-              <span>TRIP Tour</span>
+            <Link className="px-2.5 py-1.5 rounded-lg bg-red-50 text-red-700 font-bold hover:bg-red-100 transition-all flex items-center gap-1.5 border border-red-200 mr-1" href="/trip">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse"></span>
+              <span>Project Tour</span>
             </Link>
             <a className="px-2.5 py-1.5 rounded-lg hover:text-emerald-900 hover:bg-slate-100 transition-all" href="#live-incidents">
               Field Incidents
@@ -146,12 +146,12 @@ export default function LandingPage() {
           <div className="md:hidden border-t border-slate-200 bg-white px-4 py-3 space-y-1 shadow-md">
             <Link
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 mb-1.5"
+              className="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-bold text-red-700 bg-red-50 border border-red-200 mb-1.5"
               href="/trip"
             >
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
-                <span>TRIP: Project Tour Walkthrough</span>
+                <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
+                <span>Project Tour Walkthrough</span>
               </div>
               <span className="material-symbols-outlined text-sm">arrow_forward</span>
             </Link>
@@ -236,17 +236,17 @@ export default function LandingPage() {
               <div className="flex flex-wrap items-center gap-3.5 pt-2">
                 <Link
                   href="/trip"
-                  className="px-5 py-3 rounded-xl bg-gradient-to-r from-emerald-800 via-emerald-900 to-slate-900 hover:from-emerald-700 hover:to-slate-800 text-white font-bold text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2.5 transition-all shadow-md active:scale-95 border border-emerald-500/40 group ring-2 ring-emerald-500/20"
+                  className="px-5 py-3 rounded-xl bg-gradient-to-r from-red-600 via-red-700 to-rose-800 hover:from-red-500 hover:to-rose-700 text-white font-bold text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2.5 transition-all shadow-md active:scale-95 border border-red-500/50 group ring-2 ring-red-500/30"
                 >
                   <span className="flex h-2.5 w-2.5 relative">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400"></span>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-300 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-300"></span>
                   </span>
-                  <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 border border-emerald-400/40 text-[10px] font-mono text-emerald-300">
-                    TRIP
+                  <span className="px-1.5 py-0.5 rounded bg-white/20 border border-white/30 text-[10px] font-mono text-white">
+                    PROJECT TOUR
                   </span>
                   <span>CLICK ME TO LEARN ABOUT THE PROJECT</span>
-                  <span className="material-symbols-outlined text-sm text-emerald-400 group-hover:translate-x-1 transition-transform">
+                  <span className="material-symbols-outlined text-sm text-red-200 group-hover:translate-x-1 transition-transform">
                     arrow_forward
                   </span>
                 </Link>
