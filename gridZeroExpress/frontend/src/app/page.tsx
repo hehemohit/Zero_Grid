@@ -96,6 +96,9 @@ export default function LandingPage() {
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
               <span>TRIP Tour</span>
             </Link>
+            <a className="px-2.5 py-1.5 rounded-lg hover:text-emerald-900 hover:bg-slate-100 transition-all" href="#live-incidents">
+              Field Incidents
+            </a>
             <a className="px-2.5 py-1.5 rounded-lg hover:text-emerald-900 hover:bg-slate-100 transition-all" href="#mesh-simulator">
               Mesh Simulator
             </a>
@@ -152,6 +155,13 @@ export default function LandingPage() {
               </div>
               <span className="material-symbols-outlined text-sm">arrow_forward</span>
             </Link>
+            <a
+              onClick={() => setMobileMenuOpen(false)}
+              className="block px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-emerald-900"
+              href="#live-incidents"
+            >
+              Live Field Incidents Map
+            </a>
             <a
               onClick={() => setMobileMenuOpen(false)}
               className="block px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-emerald-900"
@@ -410,9 +420,16 @@ export default function LandingPage() {
               <span className="text-xs text-slate-500 font-mono mt-3">Native Kotlin BLE Mesh Mobile Client</span>
             </div>
           </div>
+        </section>
 
-          {/* 32-BIT WORD-ALIGNED PACKET PAYLOAD SPECIFICATION & MESH PROTOCOL */}
-          <div className="space-y-6" id="mesh-protocol">
+        {/* 2. LIVE FIELD INCIDENTS & DYNAMIC AVOIDANCE ROUTING */}
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t border-slate-200" id="live-incidents">
+          <ActiveCasesMiniMap />
+        </section>
+
+        {/* 3. 32-BIT WORD-ALIGNED PACKET PAYLOAD SPECIFICATION & MESH PROTOCOL */}
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t border-slate-200" id="mesh-protocol">
+          <div className="space-y-6">
             {/* Packet Payload Architecture Design Card */}
             <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-slate-200">
@@ -497,7 +514,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* 2. AUTONOMOUS MULTI-AGENT ENGINE */}
+        {/* 4. AUTONOMOUS MULTI-AGENT ENGINE */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t border-slate-200" id="multi-agent">
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-1">
@@ -627,17 +644,12 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* 3. LIVE INTERACTIVE SIMULATION SANDBOX */}
+        {/* 5. LIVE INTERACTIVE SIMULATION SANDBOX */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t border-slate-200" id="simulation">
           <TacticalAgentFlowSimulator />
         </section>
 
-        {/* 4. ACTIVE CASES TACTICAL MINI-MAP PREVIEW */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t border-slate-200">
-          <ActiveCasesMiniMap />
-        </section>
-
-        {/* 5. PROBLEM STATEMENT MATRIX */}
+        {/* 6. PROBLEM STATEMENT MATRIX */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t border-slate-200">
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-1">
@@ -723,7 +735,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* 6. 6-TIER AWS CLOUD-TO-EDGE ARCHITECTURE BLUEPRINT */}
+        {/* 7. 6-TIER AWS CLOUD-TO-EDGE ARCHITECTURE BLUEPRINT */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t border-slate-200" id="architecture">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
             <div>
@@ -810,7 +822,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* 7. PRODUCTION TECH STACK MATRIX */}
+        {/* 8. PRODUCTION TECH STACK MATRIX */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t border-slate-200">
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-1">
