@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { TacticalAgentFlowSimulator } from '@/components/landing/TacticalAgentFlowSimulator';
 import { ActiveCasesMiniMap } from '@/components/landing/ActiveCasesMiniMap';
+import { MeshNetworkSimulator } from '@/components/landing/MeshNetworkSimulator';
 
 interface TierDetail {
   title: string;
@@ -58,7 +59,7 @@ interface LogItem {
 }
 
 export default function LandingPage() {
-  const [selectedPath, setSelectedPath] = useState<'A' | 'B'>('A');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const [selectedTier, setSelectedTier] = useState<string>('t4');
 
   const currentInspector = TIER_DATA[selectedTier] || TIER_DATA.t4;
@@ -77,7 +78,7 @@ export default function LandingPage() {
               <div className="whitespace-nowrap">
                 <div className="flex items-center gap-2">
                   <span className="font-display font-bold text-lg text-emerald-950 tracking-tight">ZeroGrid</span>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                     Online • 2 Nearby
                   </span>
@@ -90,33 +91,92 @@ export default function LandingPage() {
           </div>
 
           {/* Navigation Links */}
-          <nav className="hidden xl:flex items-center gap-6 text-sm font-medium text-slate-600 whitespace-nowrap">
-            <a className="hover:text-emerald-800 transition-colors" href="#dual-path">Dual-Path RF Mesh</a>
-            <a className="hover:text-emerald-800 transition-colors" href="#architecture">AWS Topology</a>
-            <a className="hover:text-emerald-800 transition-colors" href="#multi-agent">Strands Agents SDK</a>
-            <a className="hover:text-emerald-800 transition-colors" href="#interfaces">Live Interfaces</a>
-            <a className="hover:text-emerald-800 transition-colors" href="#hardware-rf">Binary Spec</a>
-            <a className="hover:text-emerald-800 transition-colors" href="#simulation">Simulation Sandbox</a>
+          <nav className="hidden md:flex items-center gap-1 lg:gap-2 text-xs font-semibold text-slate-600 whitespace-nowrap">
+            <a className="px-2.5 py-1.5 rounded-lg hover:text-emerald-900 hover:bg-slate-100 transition-all" href="#mesh-simulator">
+              Mesh Simulator
+            </a>
+            <a className="px-2.5 py-1.5 rounded-lg hover:text-emerald-900 hover:bg-slate-100 transition-all" href="#multi-agent">
+              Multi-Agent Engine
+            </a>
+            <a className="px-2.5 py-1.5 rounded-lg hover:text-emerald-900 hover:bg-slate-100 transition-all" href="#simulation">
+              Live Tactical Simulator
+            </a>
+            <a className="px-2.5 py-1.5 rounded-lg hover:text-emerald-900 hover:bg-slate-100 transition-all" href="#architecture">
+              AWS Topology
+            </a>
           </nav>
 
-          {/* Action Buttons */}
-          <div className="flex items-center gap-2.5 shrink-0 whitespace-nowrap">
+          {/* Action Buttons & Mobile Toggle */}
+          <div className="flex items-center gap-2 shrink-0 whitespace-nowrap">
             <Link
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-all shadow-sm"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 h-9 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-all shadow-xs"
               href="/auth/login"
             >
               <span className="material-symbols-outlined text-sm">lock</span>
               <span>ADMIN SIGN IN</span>
             </Link>
             <Link
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-800 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider transition-all shadow-sm active:scale-95"
+              className="inline-flex items-center gap-1.5 px-3.5 h-9 rounded-lg bg-emerald-800 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider transition-all shadow-xs active:scale-95"
               href="#simulation"
             >
               <span className="material-symbols-outlined text-base">radar</span>
               <span>LAUNCH OPS CONSOLE</span>
             </Link>
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden inline-flex items-center justify-center w-9 h-9 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-all shadow-xs"
+              aria-label="Toggle navigation menu"
+            >
+              <span className="material-symbols-outlined text-xl">
+                {mobileMenuOpen ? 'close' : 'menu'}
+              </span>
+            </button>
           </div>
         </div>
+
+        {/* Mobile Navigation Dropdown Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-slate-200 bg-white px-4 py-3 space-y-1 shadow-md">
+            <a
+              onClick={() => setMobileMenuOpen(false)}
+              className="block px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-emerald-900"
+              href="#mesh-simulator"
+            >
+              P2P Mesh Simulator
+            </a>
+            <a
+              onClick={() => setMobileMenuOpen(false)}
+              className="block px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-emerald-900"
+              href="#multi-agent"
+            >
+              Autonomous Multi-Agent Engine
+            </a>
+            <a
+              onClick={() => setMobileMenuOpen(false)}
+              className="block px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-emerald-900"
+              href="#simulation"
+            >
+              Live Tactical Simulator
+            </a>
+            <a
+              onClick={() => setMobileMenuOpen(false)}
+              className="block px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-emerald-900"
+              href="#architecture"
+            >
+              AWS Cloud Topology
+            </a>
+            <div className="pt-2 border-t border-slate-100">
+              <Link
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-emerald-800 bg-emerald-50"
+                href="/auth/login"
+              >
+                <span className="material-symbols-outlined text-sm">lock</span>
+                <span>ADMIN SIGN IN</span>
+              </Link>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* MAIN CANVAS */}
@@ -158,10 +218,10 @@ export default function LandingPage() {
                 </a>
                 <a
                   className="px-5 py-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 hover:text-emerald-800 font-semibold text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2 transition-all shadow-sm"
-                  href="#interfaces"
+                  href="#mesh-simulator"
                 >
-                  <span className="material-symbols-outlined text-lg text-emerald-800">devices</span>
-                  <span>VIEW REAL MESH APPS</span>
+                  <span className="material-symbols-outlined text-lg text-emerald-800">hub</span>
+                  <span>LAUNCH MESH SIMULATOR</span>
                 </a>
                 <a
                   className="px-4 py-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs sm:text-sm font-semibold flex items-center gap-1.5 transition-all"
@@ -173,193 +233,11 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Hero Telemetry Display */}
-            <div className="lg:col-span-4 bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-emerald-800 text-lg">sensors</span>
-                  <span className="text-xs font-mono font-bold uppercase text-slate-800">LIVE DISPATCH HUD</span>
-                </div>
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> MESH ONLINE
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-2.5">
-                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                  <span className="text-[10px] font-mono font-semibold text-slate-500 block uppercase">ACTIVE P2P MESH</span>
-                  <span className="text-xl font-bold font-display text-emerald-800">42 NODES</span>
-                  <span className="text-[10px] text-slate-500 block">Hop Radius: 7.2 km</span>
-                </div>
-                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                  <span className="text-[10px] font-mono font-semibold text-slate-500 block uppercase">SUBSTATION 33kV</span>
-                  <span className="text-xl font-bold font-display text-amber-700">ISOLATED</span>
-                  <span className="text-[10px] text-emerald-600 font-medium block">ICU Busbar Safe</span>
-                </div>
-                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                  <span className="text-[10px] font-mono font-semibold text-slate-500 block uppercase">RESOLVED ALERTS</span>
-                  <span className="text-xl font-bold font-display text-slate-900">1,248</span>
-                  <span className="text-[10px] text-emerald-600 font-medium block">Dedup 99.4%</span>
-                </div>
-                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                  <span className="text-[10px] font-mono font-semibold text-slate-500 block uppercase">RESCUER LATENCY</span>
-                  <span className="text-xl font-bold font-display text-emerald-800">&lt; 18ms</span>
-                  <span className="text-[10px] text-slate-500 block">Redis Mutex</span>
-                </div>
-              </div>
-
-              {/* Radar Mini Widget */}
-              <div className="relative h-28 bg-slate-950 rounded-xl border border-slate-800 overflow-hidden flex items-center justify-center p-2">
-                <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:12px_12px]"></div>
-                <div className="absolute w-24 h-24 rounded-full border border-emerald-500/30"></div>
-                <div className="absolute w-14 h-14 rounded-full border border-emerald-500/20"></div>
-                <div className="absolute w-24 h-0.5 bg-gradient-to-r from-transparent via-emerald-500 to-transparent radar-sweep-anim"></div>
-                <div className="relative z-10 text-center">
-                  <span className="text-[10px] font-mono font-bold text-emerald-400 block tracking-widest">TACTICAL BEACON ACTIVE</span>
-                  <span className="text-xs font-mono text-slate-300">Delhi/Kochi Sector 4 // Water +1.8m</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Live Dual-Path Interactive Switcher */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm" id="dual-path">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-slate-200">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-emerald-800">alt_route</span>
-                  <h2 className="text-lg font-bold font-display text-slate-900">Dual-Path Emergency Routing Architecture</h2>
-                </div>
-                <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                  Simulating ZeroGrid packet propagation during complete cellular base-station collapse vs opportunistic AWS cloud restoration.
-                </p>
-              </div>
-              <div className="inline-flex p-1 bg-slate-100 rounded-xl border border-slate-200 self-start md:self-auto">
-                <button
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                    selectedPath === 'A'
-                      ? 'bg-emerald-800 text-white shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                  onClick={() => setSelectedPath('A')}
-                >
-                  PATH A: ZERO-INTERNET RF MESH
-                </button>
-                <button
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                    selectedPath === 'B'
-                      ? 'bg-emerald-800 text-white shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                  onClick={() => setSelectedPath('B')}
-                >
-                  PATH B: OPPORTUNISTIC AWS CLOUD
-                </button>
-              </div>
-            </div>
-
-            {/* Path Diagram Render Canvas */}
-            <div className="pt-6">
-              {selectedPath === 'A' ? (
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center animate-fade-in">
-                  <div className="bg-emerald-50/50 p-4 rounded-xl border border-emerald-200 relative">
-                    <span className="absolute -top-2 left-3 px-2 py-0.5 bg-emerald-800 text-white font-mono text-[9px] rounded font-bold uppercase">ORIGIN</span>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="material-symbols-outlined text-emerald-800 text-lg">phone_android</span>
-                      <span className="text-sm font-bold text-slate-900">Victim Client</span>
-                    </div>
-                    <p className="text-xs text-slate-600">Cell towers dead. Android broadcasts raw 32-byte binary BLE beacon with GPS float32 &amp; battery %.</p>
-                    <div className="mt-3 text-[11px] font-mono text-emerald-900 bg-white p-1.5 rounded border border-emerald-200 font-semibold">0x5A [SOS_PACKET] TTL: 7</div>
-                  </div>
-                  <div className="hidden md:flex flex-col items-center justify-center text-emerald-700">
-                    <span className="text-[10px] font-mono uppercase text-slate-500 font-semibold">BLE 5.0 Hop 1</span>
-                    <span className="material-symbols-outlined text-2xl animate-pulse">arrow_forward</span>
-                    <span className="text-[10px] font-mono font-medium text-emerald-700">~120m Flood Zone</span>
-                  </div>
-                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                    <span className="text-[10px] font-mono text-slate-500 block uppercase font-bold">Mesh Relay Node</span>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="material-symbols-outlined text-emerald-600 text-lg">router</span>
-                      <span className="text-sm font-bold text-slate-900">Neighbor Android / ESP32</span>
-                    </div>
-                    <p className="text-xs text-slate-600">500-slot LRU deduplication prevents RF echo storms. Decrements TTL to 6 and forwards.</p>
-                    <div className="mt-3 text-[11px] font-mono text-emerald-700 bg-white p-1.5 rounded border border-slate-200">LRU Match: FALSE -&gt; FORWARD</div>
-                  </div>
-                  <div className="bg-amber-50/60 p-4 rounded-xl border border-amber-200">
-                    <span className="text-[10px] font-mono text-amber-800 block uppercase font-bold">FIELD DESTINATION</span>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="material-symbols-outlined text-amber-700 text-lg">sailing</span>
-                      <span className="text-sm font-bold text-slate-900">NDRF Boat Tablet</span>
-                    </div>
-                    <p className="text-xs text-slate-600">Offline SQLite spatial query plots bearing &amp; elevation vector bypassing submerged 33kV line.</p>
-                    <div className="mt-3 text-[11px] font-mono text-amber-900 bg-white p-1.5 rounded border border-amber-200 font-semibold">ETA 4m 12s // SAFE CHANNEL ACTIVE</div>
-                  </div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center animate-fade-in">
-                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                    <span className="text-[10px] font-mono text-slate-500 block uppercase font-bold">Perimeter Gateway</span>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="material-symbols-outlined text-emerald-800 text-lg">cell_tower</span>
-                      <span className="text-sm font-bold text-slate-900">Relay Device Uplink</span>
-                    </div>
-                    <p className="text-xs text-slate-600">Device detects sporadic 4G/Satellite edge uplink. Wraps mesh packet into signed JSON.</p>
-                    <div className="mt-3 text-[11px] font-mono text-slate-700 bg-white p-1.5 rounded border border-slate-200">POST /v1/ingest/sos (HTTPS)</div>
-                  </div>
-                  <div className="hidden md:flex flex-col items-center justify-center text-emerald-800">
-                    <span className="text-[10px] font-mono uppercase text-slate-500 font-semibold">AWS APIGW REST/WSS</span>
-                    <span className="material-symbols-outlined text-2xl animate-pulse">cloud_sync</span>
-                    <span className="text-[10px] font-mono font-medium text-emerald-800">&lt; 24ms Ingestion</span>
-                  </div>
-                  <div className="bg-emerald-50/60 p-4 rounded-xl border border-emerald-200">
-                    <span className="text-[10px] font-mono text-emerald-800 block uppercase font-bold">AWS ECS Fargate</span>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="material-symbols-outlined text-emerald-800 text-lg">psychology</span>
-                      <span className="text-sm font-bold text-slate-900">AgentZero (Bedrock 3.5)</span>
-                    </div>
-                    <p className="text-xs text-slate-600">Strands Agents SDK runs multi-modal triage. Coordinates flood model with SCADA 33kV switchboard.</p>
-                    <div className="mt-3 text-[11px] font-mono text-emerald-900 bg-white p-1.5 rounded border border-emerald-200 font-semibold">Bedrock Sonnet Confidence: 94.2%</div>
-                  </div>
-                  <div className="bg-emerald-50/60 p-4 rounded-xl border border-emerald-200">
-                    <span className="text-[10px] font-mono text-emerald-800 block uppercase font-bold">Multi-Model Sync</span>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="material-symbols-outlined text-emerald-700 text-lg">database</span>
-                      <span className="text-sm font-bold text-slate-900">Redis Mutex + Atlas Geo</span>
-                    </div>
-                    <p className="text-xs text-slate-600">Redlock claims atomic assignment to nearest NDRF unit. Breaker isolation broadcast to mesh.</p>
-                    <div className="mt-3 text-[11px] font-mono text-emerald-900 bg-white p-1.5 rounded border border-emerald-200 font-semibold">Redlock ACQUIRED // TTL 45s</div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Active Cases Tactical Mini-Map Preview (Powered by AWS Maps SDK // Amazon Location Service) */}
-          <div className="mt-8">
-            <ActiveCasesMiniMap />
-          </div>
-        </section>
-
-        {/* 2. REAL APP INTERFACE SPOTLIGHT */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t border-slate-200" id="interfaces">
-          <div className="mb-8">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="material-symbols-outlined text-emerald-800 text-base">dashboard_customize</span>
-              <span className="text-xs font-mono font-bold text-emerald-800 uppercase tracking-wider">REAL PRODUCTION INTERFACES</span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-display font-bold text-slate-900 tracking-tight">
-              Battle-Tested UI: Native Android Mesh &amp; Web Ops Console
-            </h2>
-            <p className="text-sm text-slate-600 max-w-2xl mt-1">
-              Inspect the identical interfaces utilized by NDRF field operators and community volunteers during blackout emergencies.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            {/* Mobile App UI Showcase */}
+            {/* Native Android Mobile Client UI Showcase */}
             <div className="lg:col-span-4 flex flex-col items-center">
-              <div className="w-full max-w-[360px] bg-white rounded-[32px] border-4 border-slate-200 shadow-xl overflow-hidden flex flex-col min-h-[640px]">
+              <div className="w-full max-w-[350px] bg-white rounded-[32px] border-4 border-slate-200 shadow-xl overflow-hidden flex flex-col min-h-[620px]">
                 {/* Mobile Status Bar */}
-                <div className="px-5 pt-3 pb-2 flex items-center justify-between text-xs text-slate-600 font-mono">
+                <div className="px-5 pt-3 pb-2 flex items-center justify-between text-xs text-slate-600 font-mono bg-white">
                   <span className="font-bold text-slate-800">12:12</span>
                   <div className="flex items-center gap-1.5 text-[11px]">
                     <span>0.28 KB/s</span>
@@ -371,7 +249,7 @@ export default function LandingPage() {
                 </div>
 
                 {/* Mobile App Header */}
-                <div className="px-5 py-2.5 flex items-center justify-between border-b border-slate-200">
+                <div className="px-5 py-2.5 flex items-center justify-between border-b border-slate-200 bg-white">
                   <div className="flex items-center gap-2">
                     <div className="w-7 h-7 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-800">
                       <span className="material-symbols-outlined text-sm">hub</span>
@@ -500,147 +378,235 @@ export default function LandingPage() {
               </div>
               <span className="text-xs text-slate-500 font-mono mt-3">Native Kotlin BLE Mesh Mobile Client</span>
             </div>
+          </div>
 
-            {/* Web Operations Console Showcase */}
-            <div className="lg:col-span-8 bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col">
-              {/* Web Console Header */}
-              <div className="px-5 py-3 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 bg-white">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-slate-800">
-                    <span className="material-symbols-outlined text-emerald-800 text-base">map</span>
-                    <span>GEO-SPATIAL TELEMETRY CANVAS</span>
-                  </div>
-                  <span className="text-xs font-mono px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    1 ACTIVE HQS // 7 ACTIVE SOS
-                  </span>
-                </div>
-                <div className="flex items-center gap-3 text-xs font-mono text-slate-500">
-                  <span className="hidden sm:inline">CPU: 0.7%</span>
-                  <span className="hidden sm:inline">RAM: 97.8 MB</span>
-                  <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-bold">HQS: 1</span>
-                  <span className="px-2 py-0.5 rounded bg-red-50 text-red-600 font-bold">Active SOS: 7</span>
-                </div>
-              </div>
-
-              {/* Simulated Telemetry Map Canvas */}
-              <div className="relative h-64 bg-slate-100 overflow-hidden flex items-center justify-center border-b border-slate-200">
-                <div className="absolute inset-0 bg-[#e5e9ec] opacity-90"></div>
-                <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(#64748b 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
-                {/* Simulated Flood Danger Polygon */}
-                <svg className="absolute inset-0 w-full h-full pointer-events-none">
-                  <polygon fill="rgba(245, 158, 11, 0.18)" points="260,80 430,70 510,140 450,220 280,210" stroke="#d97706" strokeDasharray="4,4" strokeWidth="2"></polygon>
-                  <circle cx="340" cy="130" fill="rgba(239, 68, 68, 0.3)" r="14" stroke="#ef4444" strokeWidth="2"></circle>
-                  <circle cx="430" cy="110" fill="#10b981" r="8"></circle>
-                  <circle cx="390" cy="170" fill="#0284c7" r="8"></circle>
-                </svg>
-                {/* Map Center Pin Indicator */}
-                <div className="relative z-10 bg-white/95 px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm text-center">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
-                    <span className="w-2 h-2 rounded-full bg-red-600 animate-ping"></span>
-                    <span>NCR Delhi Sector // Yamuna Flood Contour</span>
-                  </div>
-                  <span className="text-[10px] text-slate-500 font-mono">28.6108° N, 77.1019° E • Water Level: +1.8m</span>
-                </div>
-                <div className="absolute bottom-2 left-3 text-[10px] font-mono text-slate-500 bg-white/90 px-2 py-0.5 rounded border border-slate-200">
-                  HQ markers rendered live • Click any marker to view location telemetry
-                </div>
-              </div>
-
-              {/* Web Console Filter Bar */}
-              <div className="p-3 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2 bg-slate-50/70 text-xs">
+          {/* 32-BIT WORD-ALIGNED PACKET PAYLOAD SPECIFICATION & MESH PROTOCOL */}
+          <div className="space-y-6" id="mesh-protocol">
+            {/* Packet Payload Architecture Design Card */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-slate-200">
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-slate-800 font-mono flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-red-600"></span> SOS Console
-                  </span>
-                  <span className="px-2 py-0.5 rounded bg-white border border-slate-200 text-slate-600 font-mono text-[11px]">
-                    GET /api/admin/sos (17 Events)
-                  </span>
+                  <span className="material-symbols-outlined text-emerald-800">memory</span>
+                  <div>
+                    <h2 className="text-lg font-bold font-display text-slate-900">
+                      32-Bit Word-Aligned Binary Packet Specification (Over-The-Air Payload)
+                    </h2>
+                    <p className="text-xs text-slate-500">
+                      ZeroGrid avoids bloated JSON envelopes on congested radio spectrum. Transmitted via raw BLE 5.0 Manufacturer Specific Data or Wi-Fi Direct frame headers.
+                    </p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="px-2.5 py-1 rounded bg-white border border-slate-200 font-semibold text-slate-700">Active Feed</span>
-                  <span className="px-2.5 py-1 rounded text-slate-500 hover:text-slate-800">History</span>
-                  <Link href="/admin" className="px-2.5 py-1 rounded bg-emerald-50 text-emerald-800 font-bold border border-emerald-200 flex items-center gap-1">
-                    <span className="material-symbols-outlined text-xs">navigation</span> Open Console
-                  </Link>
+                <div className="flex items-center gap-2 text-xs font-mono">
+                  <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 font-bold border border-emerald-200">
+                    32 BYTES FIXED (0x00 - 0x1F)
+                  </span>
+                  <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-bold">
+                    CRC-32 PROTECTED
+                  </span>
                 </div>
               </div>
 
-              {/* Active SOS Cards Feed */}
-              <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-3 bg-white">
-                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 hover:border-emerald-200 transition-all flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold bg-red-50 text-red-600 border border-red-200">
-                        ACTIVE #sos-3923
-                      </span>
-                      <span className="text-[10px] text-slate-400 font-mono">05:41 PM</span>
-                    </div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="material-symbols-outlined text-slate-400 text-sm">person</span>
-                      <span className="text-xs font-bold text-slate-900">Pokemon</span>
-                      <span className="text-[9px] font-mono text-slate-400 bg-white px-1 rounded">REGULAR NODE</span>
-                    </div>
-                    <div className="text-[10px] font-mono text-slate-500">
-                      Coordinates: 28.6108, 77.1019
-                    </div>
+              {/* Binary Word Layout Visualizer */}
+              <div className="pt-4 space-y-3">
+                <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5 font-mono text-center text-xs">
+                  <div className="bg-emerald-50 border border-emerald-300 p-2.5 rounded-xl text-emerald-900 font-bold shadow-2xs">
+                    <span className="block text-[9px] text-slate-500">B0</span>
+                    0x5A
+                    <span className="block text-[8px] text-emerald-700 font-semibold truncate">MAGIC</span>
                   </div>
-                  <div className="pt-2 mt-2 border-t border-slate-200 flex items-center justify-between text-[11px] font-mono">
-                    <span className="text-slate-600 font-bold">🔋 85% • 2 Peered</span>
-                    <Link href="/admin" className="text-emerald-800 font-semibold cursor-pointer hover:underline">Details &gt;</Link>
+                  <div className="bg-emerald-50 border border-emerald-300 p-2.5 rounded-xl text-emerald-900 font-bold shadow-2xs">
+                    <span className="block text-[9px] text-slate-500">B1</span>
+                    0x01
+                    <span className="block text-[8px] text-emerald-700 font-semibold truncate">TYPE SOS</span>
+                  </div>
+                  <div className="bg-amber-50 border border-amber-300 p-2.5 rounded-xl text-amber-900 font-bold shadow-2xs">
+                    <span className="block text-[9px] text-slate-500">B2</span>
+                    0x07
+                    <span className="block text-[8px] text-amber-700 font-semibold truncate">TTL: 7 HOPS</span>
+                  </div>
+                  <div className="bg-slate-100 border border-slate-200 p-2.5 rounded-xl text-slate-800 shadow-2xs">
+                    <span className="block text-[9px] text-slate-500">B3</span>
+                    0x12
+                    <span className="block text-[8px] text-slate-500 truncate">BATT: 18%</span>
+                  </div>
+                  <div className="col-span-2 bg-slate-100 border border-slate-200 p-2.5 rounded-xl text-slate-800 shadow-2xs">
+                    <span className="block text-[9px] text-slate-500">B4-B7 // float32</span>
+                    19.4560° N
+                    <span className="block text-[8px] text-slate-500 truncate">LATITUDE</span>
+                  </div>
+                  <div className="col-span-2 bg-slate-100 border border-slate-200 p-2.5 rounded-xl text-slate-800 shadow-2xs">
+                    <span className="block text-[9px] text-slate-500">B8-B11 // float32</span>
+                    72.8120° E
+                    <span className="block text-[8px] text-slate-500 truncate">LONGITUDE</span>
+                  </div>
+                  <div className="col-span-4 bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-slate-800 text-left px-3 shadow-2xs">
+                    <div className="flex items-center justify-between">
+                      <span className="block text-[9px] text-slate-500 font-mono">B12-B27 // 16 BYTES SENSOR &amp; TRIAGE VECTOR</span>
+                      <span className="text-[9px] font-mono text-emerald-700 font-bold">DEPTH: 52cm</span>
+                    </div>
+                    <span className="text-[11px] font-mono text-slate-700 block truncate">
+                      Water: 52cm • Temp: 28°C • Occupants: 1 • Impassable
+                    </span>
+                  </div>
+                  <div className="col-span-4 bg-emerald-50 border border-emerald-200 p-2.5 rounded-xl text-emerald-900 font-bold text-center shadow-2xs">
+                    <span className="block text-[9px] text-emerald-600">B28-B31 // CRC-32 INTEGRITY</span>
+                    <span className="text-xs font-mono">0x48A2C10F [CHECKSUM VALID]</span>
                   </div>
                 </div>
 
-                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 hover:border-emerald-200 transition-all flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold bg-red-50 text-red-600 border border-red-200">
-                        ACTIVE #sos-3922
-                      </span>
-                      <span className="text-[10px] text-slate-400 font-mono">05:41 PM</span>
-                    </div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="material-symbols-outlined text-slate-400 text-sm">person</span>
-                      <span className="text-xs font-bold text-slate-900">aaryan</span>
-                      <span className="text-[9px] font-mono text-slate-400 bg-white px-1 rounded">REGULAR NODE</span>
-                    </div>
-                    <div className="text-[10px] font-mono text-slate-500">
-                      Coordinates: 28.6108, 77.1019
-                    </div>
-                  </div>
-                  <div className="pt-2 mt-2 border-t border-slate-200 flex items-center justify-between text-[11px] font-mono">
-                    <span className="text-slate-600 font-bold">🔋 53% • 2 Peered</span>
-                    <Link href="/admin" className="text-emerald-800 font-semibold cursor-pointer hover:underline">Details &gt;</Link>
-                  </div>
+                <div className="flex flex-wrap items-center justify-between pt-2 border-t border-slate-200 text-xs font-mono text-slate-600">
+                  <span>Packet Over-The-Air Budget: 32 Bytes payload + 4 Bytes GAP Header = 36 Bytes on BLE 5.0</span>
+                  <span className="text-emerald-800 font-semibold">LRU Echo Storm Cache: 500-slot FIFO</span>
                 </div>
+              </div>
+            </div>
 
-                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 hover:border-emerald-200 transition-all flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="px-1.5 py-0.2 rounded text-[10px] font-mono font-bold bg-red-50 text-red-600 border border-red-200">
-                        ACTIVE #sos-3921
-                      </span>
-                      <span className="text-[10px] text-slate-400 font-mono">05:37 PM</span>
-                    </div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="material-symbols-outlined text-slate-400 text-sm">person</span>
-                      <span className="text-xs font-bold text-slate-900">Pokemon</span>
-                      <span className="text-[9px] font-mono text-slate-400 bg-white px-1 rounded">REGULAR NODE</span>
-                    </div>
-                    <div className="text-[10px] font-mono text-slate-500">
-                      Coordinates: 28.6108, 77.1019
-                    </div>
-                  </div>
-                  <div className="pt-2 mt-2 border-t border-slate-200 flex items-center justify-between text-[11px] font-mono">
-                    <span className="text-slate-600 font-bold">🔋 86% • 2 Peered</span>
-                    <Link href="/admin" className="text-emerald-800 font-semibold cursor-pointer hover:underline">Details &gt;</Link>
-                  </div>
+            {/* INTERACTIVE MESH NETWORK SIMULATOR COMPONENT */}
+            <MeshNetworkSimulator />
+          </div>
+        </section>
+
+        {/* 2. AUTONOMOUS MULTI-AGENT ENGINE */}
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t border-slate-200" id="multi-agent">
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="material-symbols-outlined text-emerald-800 text-base">schema</span>
+              <span className="text-xs font-mono font-bold text-emerald-800 uppercase tracking-wider">AUTONOMOUS MULTI-AGENT ENGINE</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-display font-bold text-slate-900 tracking-tight">
+              Strands Agents SDK &amp; AgentZero Autonomous Decision Pipeline
+            </h2>
+            <p className="text-sm text-slate-600 max-w-2xl mt-1">
+              AgentZero eliminates emergency room chaos by orchestrating deterministic multi-modal verification with domain-specialized LLM sub-agents.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Phase 1: Confidence Calculator Agent */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3 shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 font-mono text-xs font-bold">PHASE 01</span>
+                <span className="material-symbols-outlined text-emerald-800">calculate</span>
+              </div>
+              <h3 className="text-base font-bold text-slate-900">Confidence Calculator Agent</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Deterministic multi-modal gatekeeper scoring incoming beacon veracity across MongoDB memory, live radar, and OSM topography.
+              </p>
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1">
+                <span className="text-[10px] font-mono text-emerald-800 block font-bold">DETERMINISTIC VERACITY FORMULA:</span>
+                <div className="text-[11px] font-mono text-slate-700 font-semibold">
+                  Score = 50 (Base) + M_hist + M_weather + M_osm
                 </div>
+                <div className="text-[10px] font-mono text-slate-500 pt-1 space-y-0.5">
+                  <div>• Hist Bottleneck: +10 to +25 (Past Flood Frequency)</div>
+                  <div>• Live Weather: -20 to +20 (Rainfall mm/hr &amp; Surge)</div>
+                  <div>• OSM Culvert: -15 to +15 (Low-Lying Topography)</div>
+                </div>
+              </div>
+              <div className="text-xs text-emerald-700 font-mono font-medium flex items-center gap-1">
+                <span className="material-symbols-outlined text-sm">verified</span> Floor &ge; 65% triggers Agent 0; &lt; 65% filtered
+              </div>
+            </div>
+
+            {/* Phase 2: AgentZero Deduplication & Priority Escalator */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3 shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 font-mono text-xs font-bold">PHASE 02</span>
+                <span className="material-symbols-outlined text-emerald-800">filter_alt</span>
+              </div>
+              <h3 className="text-base font-bold text-slate-900">AgentZero Dedup &amp; Escalator</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Spatial-temporal clustering preventing 112 saturation, merging witness reports, and dynamically escalating priority tiers.
+              </p>
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1">
+                <span className="text-[10px] font-mono text-emerald-800 block font-bold">SPATIAL-TEMPORAL CLUSTERING:</span>
+                <div className="text-[11px] font-mono text-slate-700 font-semibold">
+                  350m Radius • 60-Min Window • Domain Match
+                </div>
+                <div className="text-[10px] font-mono text-slate-500 pt-1 space-y-0.5">
+                  <div>• 1 Report: Baseline (LOW / MEDIUM)</div>
+                  <div>• 2 Reports: Escalated to HIGH (Score: 78)</div>
+                  <div>• 3–4 Reports: CRITICAL (Score: 88)</div>
+                  <div>• 5+ Reports: CRITICAL Hotspot (Score: 95)</div>
+                </div>
+              </div>
+              <div className="text-xs text-emerald-800 font-mono font-medium flex items-center gap-1">
+                <span className="material-symbols-outlined text-sm">hub</span> Autonomous Crisis Domain Routing
+              </div>
+            </div>
+
+            {/* Phase 3: 4 Specialized Domain Sub-Agents */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3 shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 font-mono text-xs font-bold">PHASE 03</span>
+                <span className="material-symbols-outlined text-emerald-800">account_tree</span>
+              </div>
+              <h3 className="text-base font-bold text-slate-900">4 Domain Sub-Agents</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Parallel domain execution formulating tactical equipment demands, required skill tags, and site precautions.
+              </p>
+              <div className="space-y-1.5 text-xs">
+                <div className="bg-slate-50 p-2 rounded-lg border border-slate-200 flex items-center justify-between">
+                  <span className="text-slate-700 font-medium">Flood Agent:</span>
+                  <span className="text-emerald-800 font-mono text-[10px] font-bold">Zodiacs &amp; 500HP Pumps</span>
+                </div>
+                <div className="bg-slate-50 p-2 rounded-lg border border-slate-200 flex items-center justify-between">
+                  <span className="text-slate-700 font-medium">Power Grid Agent:</span>
+                  <span className="text-amber-700 font-mono text-[10px] font-bold">33kV Trip &amp; Linemen</span>
+                </div>
+                <div className="bg-slate-50 p-2 rounded-lg border border-slate-200 flex items-center justify-between">
+                  <span className="text-slate-700 font-medium">Rescue Agent:</span>
+                  <span className="text-blue-700 font-mono text-[10px] font-bold">Structural Shoring</span>
+                </div>
+                <div className="bg-slate-50 p-2 rounded-lg border border-slate-200 flex items-center justify-between">
+                  <span className="text-slate-700 font-medium">Heatwave Agent:</span>
+                  <span className="text-red-700 font-mono text-[10px] font-bold">Misting &amp; Saline IV</span>
+                </div>
+              </div>
+              <div className="text-xs text-emerald-700 font-mono font-medium flex items-center gap-1">
+                <span className="material-symbols-outlined text-sm">smart_toy</span> Strands SDK &amp; Bedrock Claude 3.5
+              </div>
+            </div>
+
+            {/* Phase 4: Workforce Allocation & Iterative Fallback */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3 shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 font-mono text-xs font-bold">PHASE 04</span>
+                <span className="material-symbols-outlined text-emerald-800">lock_person</span>
+              </div>
+              <h3 className="text-base font-bold text-slate-900">Workforce Fallback Loop</h3>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Queries 160-Admin roster (40 per domain). Acquires atomic Redis mutex locks and triggers inter-department fallback on shortfall.
+              </p>
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1">
+                <span className="text-[10px] font-mono text-emerald-800 block font-bold">DISTRIBUTED ATOMIC MUTEX:</span>
+                <div className="text-[11px] font-mono text-slate-700 font-semibold">
+                  SET team:&lt;id&gt; incident:&lt;id&gt; NX EX 7200
+                </div>
+                <div className="text-[10px] font-mono text-slate-500 pt-1 space-y-0.5">
+                  <div>• Shortfall: Grid &rarr; Flood Dewatering Squads</div>
+                  <div>• Shortfall: Flood &rarr; Rescue Evac Units</div>
+                  <div>• Shortfall: Heat &rarr; Medical Triage Teams</div>
+                </div>
+              </div>
+              <div className="text-xs text-emerald-800 font-mono font-medium flex items-center gap-1">
+                <span className="material-symbols-outlined text-sm">check_circle</span> Zero double-dispatch race conditions
               </div>
             </div>
           </div>
         </section>
 
-        {/* 3. PROBLEM STATEMENT MATRIX */}
+        {/* 3. LIVE INTERACTIVE SIMULATION SANDBOX */}
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t border-slate-200" id="simulation">
+          <TacticalAgentFlowSimulator />
+        </section>
+
+        {/* 4. ACTIVE CASES TACTICAL MINI-MAP PREVIEW */}
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t border-slate-200">
+          <ActiveCasesMiniMap />
+        </section>
+
+        {/* 5. PROBLEM STATEMENT MATRIX */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t border-slate-200">
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-1">
@@ -726,7 +692,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* 4. 6-TIER AWS CLOUD-TO-EDGE ARCHITECTURE BLUEPRINT */}
+        {/* 6. 6-TIER AWS CLOUD-TO-EDGE ARCHITECTURE BLUEPRINT */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t border-slate-200" id="architecture">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
             <div>
@@ -813,240 +779,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* 5. 4-PHASE MULTI-AGENT PIPELINE */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t border-slate-200" id="multi-agent">
-          <div className="mb-8">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="material-symbols-outlined text-emerald-800 text-base">schema</span>
-              <span className="text-xs font-mono font-bold text-emerald-800 uppercase tracking-wider">AUTONOMOUS MULTI-AGENT ENGINE</span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-display font-bold text-slate-900 tracking-tight">
-              4-Phase Decision Pipeline: Strands Agents SDK in Action
-            </h2>
-            <p className="text-sm text-slate-600 max-w-2xl mt-1">
-              AgentZero eliminates emergency room chaos by distributing decision load across deterministic gatekeepers and LLM-specialized sub-agents.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3 shadow-sm">
-              <div className="flex items-center justify-between">
-                <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 font-mono text-xs font-bold">PHASE 01</span>
-                <span className="material-symbols-outlined text-emerald-800">calculate</span>
-              </div>
-              <h3 className="text-base font-bold text-slate-900">Confidence Calculator Agent</h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Multimodal sensor verification preventing false alarms from drowned microphones or camera lens debris.
-              </p>
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1">
-                <span className="text-[10px] font-mono text-emerald-800 block font-bold">WEIGHTED FORMULA:</span>
-                <div className="text-[11px] font-mono text-slate-700">
-                  0.25 × Audio + 0.35 × Visual + 0.25 × IoT + 0.15 × Surge &gt;= 65%
-                </div>
-              </div>
-              <div className="text-xs text-emerald-700 font-mono font-medium flex items-center gap-1">
-                <span className="material-symbols-outlined text-sm">check_circle</span> 0 false alarms recorded
-              </div>
-            </div>
-
-            <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3 shadow-sm">
-              <div className="flex items-center justify-between">
-                <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 font-mono text-xs font-bold">PHASE 02</span>
-                <span className="material-symbols-outlined text-emerald-800">filter_alt</span>
-              </div>
-              <h3 className="text-base font-bold text-slate-900">AgentZero Gatekeeper</h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Spatial 250-meter deduplication. Evaluates threat urgency index from 0 to 100 based on water rise velocity.
-              </p>
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1">
-                <span className="text-[10px] font-mono text-emerald-800 block font-bold">DEDUPLICATION RADAR:</span>
-                <div className="text-[11px] font-mono text-slate-700">
-                  $geoWithin: &#123; $centerSphere: [ [lng, lat], 250m ] &#125;
-                </div>
-              </div>
-              <div className="text-xs text-emerald-800 font-mono font-medium flex items-center gap-1">
-                <span className="material-symbols-outlined text-sm">check_circle</span> 1,200 req/sec clustering
-              </div>
-            </div>
-
-            <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3 shadow-sm">
-              <div className="flex items-center justify-between">
-                <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 font-mono text-xs font-bold">PHASE 03</span>
-                <span className="material-symbols-outlined text-emerald-800">account_tree</span>
-              </div>
-              <h3 className="text-base font-bold text-slate-900">Sub-Agent Specialization</h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Parallel domain execution via Strands SDK tools: Flood, SCADA Power Breaker, and Boat Navigation agents.
-              </p>
-              <div className="space-y-1.5">
-                <div className="text-xs bg-slate-50 p-2 rounded-lg border border-slate-200 flex items-center justify-between">
-                  <span className="text-slate-600 font-medium">Flood Sub-Agent:</span>
-                  <span className="text-emerald-800 font-mono text-[11px] font-bold">Dynamic Elevation</span>
-                </div>
-                <div className="text-xs bg-slate-50 p-2 rounded-lg border border-slate-200 flex items-center justify-between">
-                  <span className="text-slate-600 font-medium">Grid Sub-Agent:</span>
-                  <span className="text-amber-700 font-mono text-[11px] font-bold">33kV SCADA Trip</span>
-                </div>
-              </div>
-              <div className="text-xs text-emerald-700 font-mono font-medium flex items-center gap-1">
-                <span className="material-symbols-outlined text-sm">check_circle</span> Bedrock Claude 3.5 Sonnet
-              </div>
-            </div>
-
-            <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3 shadow-sm">
-              <div className="flex items-center justify-between">
-                <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 font-mono text-xs font-bold">PHASE 04</span>
-                <span className="material-symbols-outlined text-emerald-800">lock_person</span>
-              </div>
-              <h3 className="text-base font-bold text-slate-900">Workforce Allocation Loop</h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Queries 160-Admin NDRF roster. Acquires atomic Redis Redlock mutex preventing double-dispatch to same sector.
-              </p>
-              <div className="bg-red-50 p-3 rounded-xl border border-red-200 space-y-1">
-                <span className="text-[10px] font-mono text-red-700 block font-bold">HOSPITAL ICU SAFEGUARD:</span>
-                <div className="text-[11px] font-mono text-red-900">
-                  0ms busbar transfer before flood zone breaker cutoff.
-                </div>
-              </div>
-              <div className="text-xs text-emerald-800 font-mono font-medium flex items-center gap-1">
-                <span className="material-symbols-outlined text-sm">check_circle</span> Redlock TTL: 45s fallback
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 6. HARDWARE SPEC: 32-BIT WORD-ALIGNED PACKET */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t border-slate-200" id="hardware-rf">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            <div className="lg:col-span-6 space-y-4">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-emerald-800">memory</span>
-                <span className="text-xs font-mono font-bold text-emerald-800 uppercase tracking-wider">HARDWARE &amp; PROTOCOL LAYER</span>
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-display font-bold text-slate-900 tracking-tight">
-                32-Bit Word-Aligned Binary Packet Specification
-              </h2>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                ZeroGrid avoids bloated JSON envelopes on congested radio spectrum. Over-the-air packets are packed into an ultra-dense 32-byte binary payload transmitted via raw BLE 5.0 Manufacturer Specific Data or Wi-Fi Direct frame headers.
-              </p>
-
-              {/* Binary Layout Interactive Visualizer */}
-              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-3">
-                <span className="text-xs font-mono font-bold text-slate-500 block uppercase">RAW PACKET BUFFER // 32 BYTES (0x00 - 0x1F)</span>
-                <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5 font-mono text-center text-xs">
-                  <div className="bg-emerald-50 border border-emerald-300 p-2 rounded-lg text-emerald-900 font-bold">
-                    <span className="block text-[9px] text-slate-500">B0</span>
-                    0x5A
-                    <span className="block text-[8px] truncate">MAGIC</span>
-                  </div>
-                  <div className="bg-emerald-50 border border-emerald-300 p-2 rounded-lg text-emerald-900 font-bold">
-                    <span className="block text-[9px] text-slate-500">B1</span>
-                    0x01
-                    <span className="block text-[8px] truncate">TYPE</span>
-                  </div>
-                  <div className="bg-slate-100 border border-slate-200 p-2 rounded-lg text-slate-700">
-                    <span className="block text-[9px] text-slate-500">B2</span>
-                    0x07
-                    <span className="block text-[8px] truncate">TTL</span>
-                  </div>
-                  <div className="bg-slate-100 border border-slate-200 p-2 rounded-lg text-slate-700">
-                    <span className="block text-[9px] text-slate-500">B3</span>
-                    0x0E
-                    <span className="block text-[8px] truncate">BATT%</span>
-                  </div>
-                  <div className="col-span-2 bg-slate-100 border border-slate-200 p-2 rounded-lg text-slate-800">
-                    <span className="block text-[9px] text-slate-500">B4-B7</span>
-                    LAT f32
-                    <span className="block text-[8px] truncate">28.6108° N</span>
-                  </div>
-                  <div className="col-span-2 bg-slate-100 border border-slate-200 p-2 rounded-lg text-slate-800">
-                    <span className="block text-[9px] text-slate-500">B8-B11</span>
-                    LNG f32
-                    <span className="block text-[8px] truncate">77.1019° E</span>
-                  </div>
-                  <div className="col-span-4 bg-slate-100 border border-slate-200 p-2 rounded-lg text-slate-800 text-left px-2">
-                    <span className="block text-[9px] text-slate-500">B12-B27 // 16 BYTES</span>
-                    OCCUPANT PAYLOAD + SENSOR VECTOR
-                  </div>
-                  <div className="col-span-4 bg-red-50 border border-red-200 p-2 rounded-lg text-red-700 font-bold">
-                    <span className="block text-[9px] text-red-500">B28-B31</span>
-                    CRC-32 // 0x48A2C10F
-                  </div>
-                </div>
-                <div className="flex items-center justify-between pt-2 border-t border-slate-200 text-xs font-mono">
-                  <span className="text-slate-500">Max Range: ~120m/hop BLE // ~400m Wi-Fi Direct</span>
-                  <span className="text-emerald-800 font-semibold">Deduplication: 500-slot LRU</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Android Tactical Compass Mockup */}
-            <div className="lg:col-span-6 bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-emerald-800">compass_calibration</span>
-                  <span className="text-xs font-mono font-bold text-slate-800">TACTICAL FIELD HUD // ANDROID CLIENT</span>
-                </div>
-                <span className="text-[11px] font-mono font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
-                  GPS LOCK // SAT: 11
-                </span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Compass Radar */}
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col items-center justify-center relative min-h-[200px]">
-                  <div className="w-32 h-32 rounded-full border border-emerald-200 relative flex items-center justify-center bg-white shadow-2xs">
-                    <div className="absolute inset-0 border border-dashed border-emerald-300 rounded-full animate-spin [animation-duration:30s]"></div>
-                    <div className="w-20 h-20 rounded-full border border-emerald-100 flex items-center justify-center">
-                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-800 animate-ping"></div>
-                    </div>
-                    <span className="absolute top-1 text-[9px] font-mono font-bold text-emerald-800">N 034°</span>
-                    <span className="absolute bottom-1 text-[9px] font-mono text-slate-400">S</span>
-                    <span className="absolute left-1 text-[9px] font-mono text-slate-400">W</span>
-                    <span className="absolute right-1 text-[9px] font-mono text-slate-400">E</span>
-                  </div>
-                  <div className="mt-3 text-center">
-                    <span className="text-[10px] font-mono text-slate-500 block">BEARING TO HIGHEST GROUND</span>
-                    <span className="text-xs font-bold text-emerald-950 font-mono">034° NNE // +14.2m ELEVATION</span>
-                  </div>
-                </div>
-
-                {/* Avoidance Polygons */}
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col justify-between">
-                  <div>
-                    <span className="text-[10px] font-mono text-red-600 block uppercase font-bold mb-2">AVOIDANCE POLYGONS</span>
-                    <div className="space-y-2 mb-3">
-                      <div className="p-2.5 bg-white rounded-lg border border-red-200">
-                        <div className="flex items-center justify-between text-xs font-bold text-red-600">
-                          <span>Railway Underpass C4</span>
-                          <span>-4.2m DEPTH</span>
-                        </div>
-                        <span className="text-[10px] text-slate-500 block mt-0.5">Status: Trapped Outboard Hazard</span>
-                      </div>
-                      <div className="p-2.5 bg-white rounded-lg border border-emerald-200">
-                        <div className="flex items-center justify-between text-xs font-bold text-emerald-700">
-                          <span>Substation Feeder 12</span>
-                          <span>33kV CUTOFF</span>
-                        </div>
-                        <span className="text-[10px] text-slate-500 block mt-0.5">Status: Auto-Isolated (Safe Passage)</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-xs font-mono">
-                    <span className="text-slate-500">Mesh Battery Saver:</span>
-                    <span className="text-emerald-700 font-bold">94h Standby</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 7. LIVE INTERACTIVE SIMULATION SANDBOX */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t border-slate-200" id="simulation">
-          <TacticalAgentFlowSimulator />
-        </section>
-
-        {/* 8. PRODUCTION TECH STACK MATRIX */}
+        {/* 7. PRODUCTION TECH STACK MATRIX */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 border-t border-slate-200">
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-1">
