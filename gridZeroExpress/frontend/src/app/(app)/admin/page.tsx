@@ -612,7 +612,7 @@ const handleToggleDetourMode = useCallback(() => {
   const activeSosCount = sosEvents.filter(e => e.status === 'ACTIVE').length;
 
   return (
-    <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden p-2 sm:p-4 gap-2 sm:gap-4 bg-canvas text-primaryText font-sans transition-colors duration-200">
+    <div className="flex-1 flex flex-col min-w-0 min-h-full p-2 sm:p-4 gap-3 sm:gap-4 bg-canvas text-primaryText font-sans transition-colors duration-200">
 
       {/* Toast Notification Container */}
       {toast && (
@@ -656,7 +656,7 @@ const handleToggleDetourMode = useCallback(() => {
         />
 
         {/* LOWER: Emergency SOS Feed Console */}
-        <section className="flex-1 flex flex-col bg-surface border border-hairline rounded-xl sm:rounded-2xl overflow-hidden shadow-sm min-h-[300px]">
+        <section className="flex-1 flex flex-col bg-surface border border-hairline rounded-xl sm:rounded-2xl overflow-hidden shadow-sm min-h-[460px]">
 
           {/* Console Header Bar */}
           <div className="p-3 sm:p-3.5 border-b border-hairline bg-surface flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4 flex-shrink-0">

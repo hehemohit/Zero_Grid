@@ -6,6 +6,9 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "seed:hotspots": "node src/scripts/seedHotspots.js",
+    "seed:virar": "node src/scripts/seedVirarSosRequests.js",
+    "clean:virar": "node src/scripts/seedVirarSosRequests.js --clean --clean-only",
+    "stream:virar": "node src/scripts/streamVirarSosRequests.js",
     "test:phase5": "node src/scripts/validatePhase5.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

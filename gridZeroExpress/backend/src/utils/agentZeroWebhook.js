@@ -22,26 +22,24 @@ function shouldTriggerAgentZero(sosEvent) {
 }
 
 /**
- * Fires an asynchronous, non-blocking webhook to Agent Zero microservice.
- * Updates the MongoDB document and broadcasts Socket.io live updates upon completion.
+ * Core orchestration logic that executes Agent Zero multi-agent pipeline.
  *
  * @param {Object} sosEvent - The created or updated SosEvent document
  * @param {Object} [io] - Socket.io instance
+ * @returns {Promise<Object>} The orchestration result
  */
-function triggerAgentZeroOrchestrationAsync(sosEvent, io) {
+async function executeAgentZeroOrchestration(sosEvent, io) {
   if (!shouldTriggerAgentZero(sosEvent)) {
-    return;
+    return null;
   }
 
-  // Execute asynchronously off the critical path
-  setImmediate(async () => {
-    try {
-      const coordinates = sosEvent.location?.coordinates || [72.812, 19.456];
-      const resolvedNode = resolveNearestGridNode(coordinates);
+  try {
+    const coordinates = sosEvent.location?.coordinates || [72.812, 19.456];
+    const resolvedNode = resolveNearestGridNode(coordinates);
 
-      console.log(
-        `[Agent Zero Webhook] Triggering autonomous orchestration for SOS ${sosEvent._id} -> Node ${resolvedNode.nodeId} (${resolvedNode.name})`
-      );
+    console.log(
+      `[Agent Zero Webhook] Triggering autonomous orchestration for SOS ${sosEvent._id} -> Node ${resolvedNode.nodeId} (${resolvedNode.name})`
+    );
 
       const waterDepth = sosEvent.waterDepthCm !== undefined && sosEvent.waterDepthCm !== null ? Number(sosEvent.waterDepthCm) : 0;
       const tempC = sosEvent.temperatureC !== undefined && sosEvent.temperatureC !== null ? Number(sosEvent.temperatureC) : 28;
@@ -96,7 +94,7 @@ function triggerAgentZeroOrchestrationAsync(sosEvent, io) {
       if (VOICE_AGENT_LAMBDA_URL) {
         try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout to allow for Lambda cold starts
+          const timeoutId = setTimeout(() => controller.abort(), 2500); // 2.5s fast timeout with immediate authentic fallback
           const response = await fetch(VOICE_AGENT_LAMBDA_URL, {
             method: 'POST',
             headers: {
@@ -271,18 +269,35 @@ ${dispatchMessage || `Mandatory gear loadout: [${requiredTags.join(', ')}]`}`.tr
           ...updatedDoc.toObject(),
         });
       }
+
+      return pipelineResponse;
     } catch (err) {
       if (err.name === 'AbortError') {
         console.warn(`[Agent Zero Webhook] Request timed out for SOS ${sosEvent._id}`);
       } else {
         console.error(`[Agent Zero Webhook] Error executing autonomous orchestration:`, err.message);
       }
+      return null;
     }
+}
+
+/**
+ * Fires an asynchronous, non-blocking webhook to Agent Zero microservice.
+ */
+function triggerAgentZeroOrchestrationAsync(sosEvent, io) {
+  if (!shouldTriggerAgentZero(sosEvent)) {
+    return;
+  }
+  setImmediate(() => {
+    executeAgentZeroOrchestration(sosEvent, io).catch((err) => {
+      console.error('[Agent Zero Webhook] Background task error:', err.message);
+    });
   });
 }
 
 module.exports = {
   VOICE_AGENT_LAMBDA_URL,
   shouldTriggerAgentZero,
+  executeAgentZeroOrchestration,
   triggerAgentZeroOrchestrationAsync,
 };

@@ -57,7 +57,7 @@ export function MapCanvas({
   };
 
   return (
-    <section className="flex-1 w-full min-h-[300px] md:min-h-[340px] lg:min-h-[480px] flex flex-col bg-surface border border-hairline rounded-16dp overflow-hidden relative shadow-panel-dark">
+    <section className="w-full h-[360px] md:h-[420px] lg:h-[460px] flex-shrink-0 flex flex-col bg-surface border border-hairline rounded-16dp overflow-hidden relative shadow-panel-dark">
       {/* Card Header Toolbar */}
       <div className="min-h-[44px] border-b border-hairline px-3 sm:px-5 py-2.5 sm:py-0 flex flex-col sm:flex-row sm:items-center justify-between bg-surfaceElevated/70 backdrop-blur-md z-10 flex-shrink-0 gap-2 sm:gap-0">
         <div className="flex items-center gap-2">
