@@ -893,3 +893,109 @@ npm run dev
 | **Geospatial Isolation** | MongoDB `2dsphere` indexing | Restricts spatial searches to authorized radii without scanning entire collections. |
 | **Credential Hardening** | AWS Secrets Manager + IAM Instance Profiles | Eliminates long-lived static AWS access keys in production environments. |
 | **Offline Loop Prevention** | 500-slot LRU `DeduplicationCache` + TTL countdown | Stops infinite RF broadcast storms across peer mesh networks. |
+
+---
+
+## 9. Public & Open Developer Endpoints (Open Access)
+
+ZeroGrid provides open, developer-accessible REST endpoints for external emergency services, IoT wearables, smart city integrations, and automated health monitoring tools. These endpoints do not require complex administrative credentials (API Key via `X-ZeroGrid-API-Key` is optional):
+
+### 9.1 Nearest Emergency Headquarters & Hexagonal Zone
+* **Endpoint:** `GET /api/v1/public/zones/nearest`
+* **Query Parameters:**
+  * `lat` (float, required): Latitude (e.g. `19.4565`)
+  * `lng` (float, required): Longitude (e.g. `72.8125`)
+* **Description:** Performs a haversine distance search across active emergency response headquarters and returns the closest base, distance in kilometers, and the governing 10–15 km hexagonal operational zone.
+* **Example Request:**
+  ```bash
+  curl -X GET "http://localhost:5000/api/v1/public/zones/nearest?lat=19.4565&lng=72.8125"
+  ```
+* **Sample Response (`200 OK`):**
+  ```json
+  {
+    "status": "success",
+    "nearestHeadquarters": {
+      "id": "6acb31a0fec99ec4ae994e78",
+      "name": "VVMC Virar Emergency Response HQ",
+      "distanceKm": 0.42,
+      "location": { "lat": 19.4565, "lng": 72.8125 }
+    },
+    "zone": {
+      "id": "6acb31a0fec99ec4ae994e79",
+      "name": "VVMC Virar Operational Zone",
+      "code": "ZONE-VVMC-VIRAR-HEX",
+      "radiusKm": 12.0
+    }
+  }
+  ```
+
+---
+
+### 9.2 Regional SOS Density & Risk Level (Privacy-Sanitized)
+* **Endpoint:** `GET /api/v1/public/sos/density`
+* **Query Parameters:**
+  * `lat` (float, required): Latitude (e.g. `19.4539`)
+  * `lng` (float, required): Longitude (e.g. `72.8115`)
+  * `radiusKm` (float, optional, default: `25`, max: `100`): Search radius in kilometers
+* **Description:** Privacy-safe query using MongoDB `2dsphere` spatial indexing to calculate active incident density and danger risk level (`LOW`, `MODERATE`, `HIGH`, `CRITICAL`) without exposing victim PII or exact addresses.
+* **Example Request:**
+  ```bash
+  curl -X GET "http://localhost:5000/api/v1/public/sos/density?lat=19.4539&lng=72.8115&radiusKm=10"
+  ```
+* **Sample Response (`200 OK`):**
+  ```json
+  {
+    "status": "success",
+    "queryLocation": { "latitude": 19.4539, "longitude": 72.8115 },
+    "searchRadiusKm": 10,
+    "totalActiveIncidents": 12,
+    "riskLevel": "CRITICAL",
+    "categoryBreakdown": {
+      "MEDICAL": 1,
+      "DISASTER": 1,
+      "TRAPPED": 2,
+      "SECURITY": 0,
+      "OTHER": 8
+    },
+    "timestamp": "2026-10-11T13:00:00.000Z"
+  }
+  ```
+
+---
+
+### 9.3 External Partner & IoT SOS Ingestion
+* **Endpoint:** `POST /api/v1/public/sos/ingest`
+* **Headers:** `Content-Type: application/json`, `X-ZeroGrid-API-Key` *(optional)*
+* **Description:** Ingests distress alerts from third-party smartwatches, IoT water sensors, panic buttons, or municipal disaster portals directly into the ZeroGrid dispatch queue and broadcasts via Socket.io to `/sos`.
+* **Request Body:**
+  ```json
+  {
+    "lat": 19.4539,
+    "lng": 72.8115,
+    "sourceApp": "CitizenWatch v2.1",
+    "category": "SUBMERGED_UNDERPASS",
+    "message": "Water rising rapidly near subway entrance",
+    "batteryPercentage": 42,
+    "callerPhone": "+91 98201 44521"
+  }
+  ```
+* **Sample Response (`201 Created`):**
+  ```json
+  {
+    "status": "success",
+    "message": "Emergency SOS ingested successfully into ZeroGrid dispatch network.",
+    "sosId": "6acb37795d5af79951c77922",
+    "assignedZoneCode": "ZONE-VVMC-VIRAR-HEX",
+    "dispatchStatus": "ACTIVE",
+    "timestamp": "2026-10-11T13:00:00.000Z"
+  }
+  ```
+
+---
+
+### 9.4 System Health & Monitoring Probes
+* **Health Check Probe:** `GET /health`
+  * Returns JSON containing App Runner/Docker status, database connection state, process uptime, and active AI engine.
+* **Prometheus Operational Metrics:** `GET /metrics`
+  * Scraped by Prometheus / Grafana Cloud every 15 seconds. Exposes active incident gauges, process memory, CPU utilization, and HTTP request durations.
+
